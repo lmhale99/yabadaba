@@ -1,0 +1,20 @@
+# Compiled python modules
+*.pyc
+yabadaba.egg-info/
+
+#PyPI dist and build
+dist/
+build/
+dist-old/
+upload_package.bash
+
+# Jupyter Notebook checkpoints
+*.ipynb_checkpoints/
+
+# Virtual Studio Code metadata
+.vscode/
+
+# Example files
+testdb/
+
+test/
