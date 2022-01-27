@@ -2,27 +2,77 @@
 
 # Relative imports
 from ..tools import aslist
+from .Query import Query
+
+class StrMatchQuery(Query):
+    """Class for querying str fields for specific values"""
+
+    @property
+    def style(self):
+        """str: The query style"""
+        return 'str_match'
+
+    @property
+    def description(self):
+        """str: Describes the query operation that the class performs."""
+        return 'Query a str field for specific values'
+
+    def mongo(self, querydict, value):
+        """
+        Builds a Mongo query operation for the field.
+
+        Parameters
+        ----------
+        querydict : dict
+            The set of mongo query operations that the new operation will be
+            added to.
+        value : any
+            The value of the field to query on.  If None, then no new query
+            operation will be added.
+        """
+        if value is not None:
+            querydict[self.path] = {'$in': aslist(value)}
+
+    def pandas(self, df, value):
+        """
+        Applies a query filter to the metadata for the field.
+        
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            A table of metadata for multiple records of the record style.
+        value : any
+            The value of the field to query on.  If None, then it should return
+            True for all rows of df.
+        
+        Returns
+        -------
+        pandas.Series
+            Boolean map of matching values
+        """
+
+        def apply_function(series, name, value, parent):
+            if value is None:
+                return True
+            
+            if parent is None:
+                return series[name] in aslist(value)
+            
+            else:
+                for p in series[parent]:
+                    if name in p and p[name] in aslist(value):
+                        return True
+                return False
+
+        return df.apply(apply_function, axis=1, args=(self.name, value, self.parent))
+
+# Define legacy functions
 
 def description():
-    return "Query records where a string element has a value matching a val string"
+    return StrMatchQuery().description
 
 def mongo(qdict, path, val):
-    if val is not None:
-        qdict[path] = {'$in': aslist(val)}
+    StrMatchQuery(path=path).mongo(qdict, val)
 
 def pandas(df, name, val, parent=None):
-    
-    def apply_function(series, name, val, parent):
-        if val is None:
-            return True
-        
-        if parent is None:
-            return series[name] in aslist(val)
-        
-        else:
-            for p in series[parent]:
-                if name in p and p[name] in aslist(val):
-                    return True
-            return False
-
-    return df.apply(apply_function, axis=1, args=(name, val, parent))
+    return StrMatchQuery(name=name, parent=parent).pandas(df, val)
