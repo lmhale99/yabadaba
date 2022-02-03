@@ -1,5 +1,7 @@
 # coding: utf-8
-
+# Standard Python libraries
+import sys
+from importlib import import_module
 class ModuleManager():
     """
     Base class for managing module subclasses
@@ -17,6 +19,35 @@ class ModuleManager():
         self.__parentname = parentname
         self.__loaded_styles = {}
         self.__failed_styles = {}
+
+    def import_style(self, style, modulename, package=None, classname=None):
+        """
+        Tries to import a modular class and appends the results to loaded_styles or
+        failed_styles accordingly.
+
+        Parameters
+        ----------
+        style : str
+            The style name to associate with the modular class.
+        modulename : str
+            The name of the module to try to import.
+        package : str, optional
+            The name of the package which is to act as the anchor for resolving
+            relative package names.
+        classname : str, optional
+            The name of the class in the imported module to associate with
+            the style.  If not given, will use the final name of the modulename
+            path.
+        """
+        if classname is None:
+            classname = modulename.split('.')[-1]
+        
+        try:
+            obj = getattr(import_module(modulename, package=package), classname)
+        except Exception as e:
+            self.failed_styles[style] = '%s: %s' % sys.exc_info()[:2]
+        else:
+            self.loaded_styles[style] = obj
 
     @property
     def parentname(self):
@@ -50,7 +81,7 @@ class ModuleManager():
         """
         print(f'{self.parentname} styles that passed import:')
         for style in self.loaded_style_names:
-            print(f'- {style}')
+            print(f'- {style}: {self.loaded_styles[style]}')
 
         print(f'{self.parentname} styles that failed import:')
         for style in self.failed_style_names:
