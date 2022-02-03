@@ -1,38 +1,25 @@
 # coding: utf-8
+__all__ = ['str_contains', 'str_match', 'in_list', 'int_match', 'date_match',
+           'querymanager', 'Query', 'load_query']
 
 # Relative imports
 from . import str_contains, str_match, in_list, int_match, date_match
-__all__ = ['str_contains', 'str_match', 'in_list', 'int_match', 'date_match',
-           'querymanager', 'load_query']
+from .Query import Query
 
-# Build querymanager
+# Initialize a ModuleManager for the query styles
 from ..tools import ModuleManager
 querymanager = ModuleManager('Query')
 
-from .str_contains import StrContainsQuery
-querymanager.loaded_styles['str_contains'] = StrContainsQuery
-__all__.append('StrContainsQuery')
-
-from .str_match import StrMatchQuery
-querymanager.loaded_styles['str_match'] = StrMatchQuery
-__all__.append('StrMatchQuery')
-
-from .in_list import ListContainsQuery
-querymanager.loaded_styles['in_list'] = ListContainsQuery
-querymanager.loaded_styles['list_contains'] = ListContainsQuery
-__all__.append('ListContainsQuery')
-
-from .int_match import IntMatchQuery
-querymanager.loaded_styles['int_match'] = IntMatchQuery
-__all__.append('IntMatchQuery')
-
-from .date_match import DateMatchQuery
-querymanager.loaded_styles['date_match'] = DateMatchQuery
-__all__.append('StrContainsQuery')
+# Add the modular Query styles (future)
+querymanager.import_style('str_contains', '.StrContainsQuery', __name__)
+querymanager.import_style('str_match', '.StrMatchQuery', __name__)
+querymanager.import_style('list_contains', '.ListContainsQuery', __name__)
+querymanager.import_style('int_match', '.IntMatchQuery', __name__)
+querymanager.import_style('date_match', '.DateMatchQuery', __name__)
 
 def load_query(style, name=None, parent=None, path=None):
     """
-    Loads a Query subclass associated with a given query style
+    Loads a Query subclass associated with a given query style.
 
     Parameters
     ----------

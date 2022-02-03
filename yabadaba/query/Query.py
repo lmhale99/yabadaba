@@ -31,6 +31,15 @@ class Query():
         self.parent = parent
         self.path = path
 
+    def __str__(self):
+        """
+        Returns
+        -------
+        str
+            The string representation of the query.
+        """
+        return f'query style {self.style}'
+
     @property
     def style(self):
         """str: The query style"""
@@ -87,7 +96,7 @@ class Query():
         """str: Describes the query operation that the class performs."""
         raise NotImplementedError('Not defined for base class')
 
-    def mongo(self, querydict, value):
+    def mongo(self, querydict, value, prefix=''):
         """
         Builds a Mongo query operation for the field.
 
@@ -99,6 +108,9 @@ class Query():
         value : any
             The value of the field to query on.  If None, then no new query
             operation will be added.
+        prefix : str, optional
+            An optional prefix to add before the query path.  Used by Record's
+            mongoquery to start each path with "content."
         """
         # Do nothing - base class
         pass
