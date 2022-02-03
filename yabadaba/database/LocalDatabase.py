@@ -110,34 +110,42 @@ class LocalDatabase(Database):
                     return newcolumn
                     
             # Interpret int, dict and list elements
-            cache = cache.apply(toint, axis=0)
-            for key in cache.keys():
-                cache[key] = cache.apply(interpret, axis=1, args=[key])
+            if len(cache) > 0:
+                cache = cache.apply(toint, axis=0)
+                for key in cache.keys():
+                    cache[key] = cache.apply(interpret, axis=1, args=[key])
 
         else:
             # Initialize new cache
             cache = pd.DataFrame({'name':[]})
 
-        newrecords = []
+        
         if addnew is True:
 
-            # Search local directory for new entries
-            currentnames = cache.name.to_list()
-            for fname in Path(self.host, style).glob(f'*.{self.format}'):
-                name = fname.stem
+            # Compare names in the cache to file names in the directory
+            cachenames = set(cache.name)
+            filenames = set([fname.stem for fname in Path(self.host, style).glob(f'*.{self.format}')])
+            newnames = filenames.difference(cachenames)
+            deletednames = cachenames.difference(filenames)
 
-                # Load new entries
-                if name not in currentnames:
+            # Load new entries
+            if len(newnames) > 0:
+                newrecords = []
+                for name in newnames:
+                    fname = Path(self.host, style, f'{name}.{self.format}')
                     record = load_record(style, model=fname, name=name)
                     newrecords.append(record.metadata())
-            
-            # Add new entries to the cache
-            if len(newrecords) > 0:
                 newrecords = pd.DataFrame(newrecords)
-                cache = cache.append(newrecords, sort=False).sort_values('name').reset_index(drop=True)
+                cache = cache.append(newrecords, sort=False).sort_values('name')
+                refresh = True
+            
+            # Delete missing entries
+            if len(deletednames) > 0:                
+                cache = cache[~cache.name.isin(deletednames)]
+                refresh = True
 
-        # Update cache file
-        if refresh or len(newrecords) > 0:
+        # Refresh cache file
+        if refresh:
             cache.to_csv(cachefile, index=False)
 
         return cache
