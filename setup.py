@@ -11,7 +11,7 @@ def getversion():
 
 setup(name = 'yabadaba',
       version = getversion(),
-      description = 'Yay, a base database: an abstraction layer allowing for common interactions with Mongo, CDCS and local directory databases and records.',
+      description = 'Yay, a base database! An abstraction layer allowing for common interactions with Mongo, CDCS and local directory databases and records.',
       long_description = getreadme(),
       classifiers=[
         'Development Status :: 4 - Beta',
