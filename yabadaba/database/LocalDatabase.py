@@ -36,13 +36,14 @@ class LocalDatabase(Database):
             file will be indented by multiples of this value based on the
             model's element recursion.
         """
-        # Get absolute path to host
-        host = Path(host).resolve()
-        
         # Make the path if needed
+        host = Path(host)
         if not host.is_dir():
             host.mkdir(parents=True)
         
+        # Get absolute path to host
+        host = host.resolve()
+
         # Pass host to Database initializer
         Database.__init__(self, host)
 
