@@ -12,6 +12,8 @@ import lxml.etree as ET
 # https://github.com/usnistgov/DataModelDict
 from DataModelDict import DataModelDict as DM
 
+from .. import load_query
+
 class Record():
     """
     Class for handling different record styles in the same fashion.  The
@@ -35,8 +37,8 @@ class Record():
         self.__name = None
 
         # Check that object is a subclass
-        if self.__module__ == __name__:
-            raise TypeError("Don't use Record itself, only use derived classes")
+        #if self.__module__ == __name__:
+        #    raise TypeError("Don't use Record itself, only use derived classes")
         
         if model is not None:
             assert len(kwargs) == 0
@@ -89,7 +91,7 @@ class Record():
     @property
     def style(self):
         """str: The record style"""
-        raise NotImplementedError('Not defined for base class')
+        return 'base'
     
     @property
     def xsd_filename(self):
@@ -170,7 +172,12 @@ class Record():
         """
         raise NotImplementedError('Specific to subclasses')
     
-    def pandasfilter(self, dataframe, **kwargs):
+    @property
+    def queries(self):
+        """dict: Query objects and their associated parameter names."""
+        return {}
+
+    def pandasfilter(self, dataframe, name=None, **kwargs):
         """
         Filters a pandas.DataFrame based on kwargs values for the record style.
         
@@ -178,6 +185,8 @@ class Record():
         ----------
         dataframe : pandas.DataFrame
             A table of metadata for multiple records of the record style.
+        name : str or list
+            The record name(s) to parse by.
         **kwargs : any
             Any of the record style-specific search parameters.
         
@@ -186,14 +195,26 @@ class Record():
         pandas.Series, numpy.NDArray?
             Boolean map of matching values
         """
-        return dataframe.apply(lambda series:True, axis=1)
+        # Get defined queries
+        queries = self.queries
+        
+        # Query name
+        matches = load_query('str_match', name='name').pandas(dataframe, name)
 
-    def mongoquery(self, **kwargs):
+        # Apply queries based on given kwargs
+        for key in kwargs:
+            matches = (matches & queries[key].pandas(dataframe, kwargs[key]))
+        
+        return matches
+
+    def mongoquery(self, name=None, **kwargs):
         """
         Builds a Mongo-style query based on kwargs values for the record style.
         
         Parameters
         ----------
+        name : str or list
+            The record name(s) to parse by.
         **kwargs : any
             Any of the record style-specific search parameters.
         
@@ -202,7 +223,20 @@ class Record():
         dict
             The Mongo-style query
         """
-        return {}
+        # Get the dict of queries
+        queries = self.queries
+
+        # Initialize the query dictionary
+        querydict = {}
+
+        # Query name
+        load_query('str_match', path='name').mongo(querydict, name)
+
+        # Apply queries based on given kwargs
+        for key in kwargs:
+            queries[key].mongo(querydict, kwargs[key], prefix='content.')
+        
+        return querydict
 
     def cdcsquery(self, **kwargs):
         """
@@ -218,7 +252,17 @@ class Record():
         dict
             The CDCS-style query
         """
-        return {}
+        # Get the dict of queries
+        queries = self.queries
+
+        # Initialize the query dictionary
+        querydict = {}
+
+        # Apply queries based on given kwargs
+        for key in kwargs:
+            queries[key].mongo(querydict, kwargs[key])
+        
+        return querydict
 
     def html(self, render=False):
         """
