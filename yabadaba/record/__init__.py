@@ -1,4 +1,5 @@
 # coding: utf-8
+__all__ = ['Record', 'recordmanager', 'load_record']
 
 # Relative imports
 from .Record import Record
@@ -6,8 +7,6 @@ from ..tools import ModuleManager
 
 # Initialize ModuleManager for records
 recordmanager = ModuleManager('Record')
-
-__all__ = ['Record', 'recordmanager', 'load_record']
 
 # Define load_record 
 def load_record(style, model=None, name=None, **kwargs):
