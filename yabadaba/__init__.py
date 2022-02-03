@@ -8,7 +8,7 @@ __all__ = sorted(['__version__', 'tools', 'settings',
 from importlib import resources
 
 # Read version from VERSION file
-__version__ = resources.read_text('datamodelbase', 'VERSION').strip()
+__version__ = resources.read_text('yabadaba', 'VERSION').strip()
 
 __all__ = ['__version__', 'tools', 'settings', 'record', 'load_record']
 __all__.sort()
