@@ -51,7 +51,7 @@ class CDCSDatabase(Database):
             pass
         
         # Pass parameters to cdcs object
-        self.cdcs = CDCS(host, username=username, password=password,
+        self.__cdcs = CDCS(host, username=username, password=password,
                          cert=cert, verify=verify)
         
         # Pass host to Database initializer
@@ -61,6 +61,11 @@ class CDCSDatabase(Database):
     def style(self):
         """str: The database style"""
         return 'cdcs'
+
+    @property
+    def cdcs(self):
+        """cdcs.CDCS : The underlying database API object."""
+        return self.__cdcs
 
     def get_records(self, style=None, name=None, return_df=False,
                     query=None, keyword=None, **kwargs):
