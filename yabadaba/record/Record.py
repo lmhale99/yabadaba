@@ -35,13 +35,9 @@ class Record():
         """
         self.__model = None
         self.__name = None
-
-        # Check that object is a subclass
-        #if self.__module__ == __name__:
-        #    raise TypeError("Don't use Record itself, only use derived classes")
         
         if model is not None:
-            assert len(kwargs) == 0
+            assert len(kwargs) == 0, f"cannot specify kwargs with model: '{kwargs.keys()}'"
             self.load_model(model, name=name)
         else:
             self.set_values(name=name, **kwargs)
