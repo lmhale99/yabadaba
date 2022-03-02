@@ -1,7 +1,7 @@
 # coding: utf-8
 
 # Standard Python libraries
-from typing import Any, Optional, NoReturn
+from typing import Any, Optional
 
 # Relative imports
 from ..tools import iaslist
@@ -23,7 +23,7 @@ class StrContainsQuery(Query):
         """str: Describes the query operation that the class performs."""
         return 'Query a str field for containing specific values'
 
-    def mongo(self, querydict: dict, value: Any, prefix: str = '') -> NoReturn:
+    def mongo(self, querydict: dict, value: Any, prefix: str = ''):
         """
         Builds a Mongo query operation for the field.
 
