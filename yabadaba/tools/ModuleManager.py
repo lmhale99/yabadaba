@@ -2,11 +2,12 @@
 # Standard Python libraries
 import sys
 from importlib import import_module
+from typing import Optional
 class ModuleManager():
     """
     Base class for managing module subclasses
     """
-    def __init__(self, parentname):
+    def __init__(self, parentname: str):
         """
         Creates a ModuleManager object
 
@@ -20,7 +21,10 @@ class ModuleManager():
         self.__loaded_styles = {}
         self.__failed_styles = {}
 
-    def import_style(self, style, modulename, package=None, classname=None):
+    def import_style(self, style: str,
+                     modulename: str,
+                     package: Optional[str] = None,
+                     classname: Optional[str] = None):
         """
         Tries to import a modular class and appends the results to loaded_styles or
         failed_styles accordingly.
@@ -50,27 +54,27 @@ class ModuleManager():
             self.loaded_styles[style] = obj
 
     @property
-    def parentname(self):
+    def parentname(self) -> str:
         """str : The name of the parent class (used for messages)"""
         return self.__parentname
 
     @property
-    def loaded_styles(self):
+    def loaded_styles(self) -> dict:
         """dict : The styles that were successfully imported.  Values are the loaded modules"""
         return self.__loaded_styles
     
     @property
-    def failed_styles(self):
+    def failed_styles(self) -> dict:
         """dict : The styles that were unsuccessfully imported.  Values are the error messages"""
         return self.__failed_styles
     
     @property
-    def loaded_style_names(self):
+    def loaded_style_names(self) -> list:
         """list : The names of the loaded styles"""
         return list(self.loaded_styles.keys())
 
     @property
-    def failed_style_names(self):
+    def failed_style_names(self) -> list:
         """list : The names of the loaded styles"""
         return list(self.failed_styles.keys())
     
@@ -88,8 +92,22 @@ class ModuleManager():
             print(f'- {style}: {self.failed_styles[style]}')
         print()
 
-    def assert_style(self, style):
-        """Checks if the style successfully loaded, throws an error otherwise."""
+    def assert_style(self, style: str):
+        """
+        Checks if the style successfully loaded, throws an error otherwise.
+        
+        Parameters
+        ----------
+        style : str
+            The style name to check.
+
+        Raises
+        ------
+        ImportError
+            If the style is found in failed_styles
+        KeyError
+            If the style is not found in either loaded_styles or failed_styles
+        """
         if style in self.failed_style_names:
             raise ImportError(f'{self.parentname} style {style} failed import: {self.failed_styles[style]}')
         elif style not in self.loaded_style_names:
