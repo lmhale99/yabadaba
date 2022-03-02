@@ -1,9 +1,9 @@
 # coding: utf-8
-__all__ = ['str_contains', 'str_match', 'in_list', 'int_match', 'date_match',
-           'querymanager', 'Query', 'load_query']
+__all__ = ['str_contains', 'str_match', 'list_contains', 'in_list', 'int_match',
+           'date_match', 'querymanager', 'Query', 'load_query']
 
 # Relative imports
-from . import str_contains, str_match, in_list, int_match, date_match
+from . import str_contains, str_match, in_list, int_match, list_contains, date_match
 from .Query import Query
 
 # Initialize a ModuleManager for the query styles

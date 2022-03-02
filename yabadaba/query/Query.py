@@ -1,12 +1,18 @@
 # coding: utf-8
 
+# Standard Python libraries
+from typing import Any, Optional, NoReturn
+
+import pandas as pd
 class Query():
     """
     Base Query class.  Each Query class defines a query operation and each
     Query object is associated with a specific data field.
     """
     
-    def __init__(self, name=None, parent=None, path=None):
+    def __init__(self, name: Optional[str] = None,
+                 parent: Optional[str] = None,
+                 path: Optional[str] = None):
         """
         Query initialization
 
@@ -25,13 +31,13 @@ class Query():
         """
         # Check that object is a subclass
         if self.__module__ == __name__:
-            raise TypeError("Don't use Database itself, only use derived classes")
+            raise TypeError("Don't use Query itself, only use derived classes")
 
         self.name = name
         self.parent = parent
         self.path = path
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Returns
         -------
@@ -41,19 +47,19 @@ class Query():
         return f'query style {self.style}'
 
     @property
-    def style(self):
+    def style(self) -> str:
         """str: The query style"""
         raise NotImplementedError('Not defined for base class')
 
     @property
-    def name(self):
+    def name(self) -> str:
         """str: The metadata key associated with the data field"""
         if self.__name is None:
             raise AttributeError('name not set')
         return self.__name
 
     @name.setter
-    def name(self, value):
+    def name(self, value: Optional[str]):
         if value is None:
             self.__name = None
         elif isinstance(value, str):
@@ -62,12 +68,12 @@ class Query():
             raise TypeError('name must be None or a string')
 
     @property
-    def parent(self):
+    def parent(self) -> Optional[str]:
         """str or None: The parent metadata key, if any."""
         return self.__parent
 
     @parent.setter
-    def parent(self, value):
+    def parent(self, value: Optional[str]):
         if value is None:
             self.__parent = None
         elif isinstance(value, str):
@@ -76,14 +82,14 @@ class Query():
             raise TypeError('parent must be None or a string')
 
     @property
-    def path(self):
+    def path(self) -> str:
         """str: The period delimited path to the associated field."""
         if self.__path is None:
             raise AttributeError('path not set')
         return self.__path
 
     @path.setter
-    def path(self, value):
+    def path(self, value: Optional[str]):
         if value is None:
             self.__path = None
         elif isinstance(value, str):
@@ -92,11 +98,11 @@ class Query():
             raise TypeError('path must be None or a string')
 
     @property
-    def description(self):
+    def description(self) -> str:
         """str: Describes the query operation that the class performs."""
         raise NotImplementedError('Not defined for base class')
 
-    def mongo(self, querydict, value, prefix=''):
+    def mongo(self, querydict: dict, value: Any, prefix: str = '') -> NoReturn:
         """
         Builds a Mongo query operation for the field.
 
@@ -115,7 +121,7 @@ class Query():
         # Do nothing - base class
         pass
 
-    def pandas(self, df, value):
+    def pandas(self, df: pd.DataFrame, value: Any) -> pd.Series:
         """
         Applies a query filter to the metadata for the field.
         

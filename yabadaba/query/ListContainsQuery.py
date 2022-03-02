@@ -1,5 +1,10 @@
 # coding: utf-8
 
+# Standard Python libraries
+from typing import Any, Optional, NoReturn
+
+import pandas as pd
+
 # Relative imports
 from ..tools import iaslist
 from .Query import Query
@@ -8,16 +13,16 @@ class ListContainsQuery(Query):
     """Class for querying list fields for contained values"""
 
     @property
-    def style(self):
+    def style(self) -> str:
         """str: The query style"""
         return 'list_contains'
 
     @property
-    def description(self):
+    def description(self) -> str:
         """str: Describes the query operation that the class performs."""
         return 'Query a str field for containing specific values'
 
-    def mongo(self, querydict, value, prefix=''):
+    def mongo(self, querydict: dict, value: Any, prefix: str = '') -> NoReturn:
         """
         Builds a Mongo query operation for the field.
 
@@ -33,14 +38,20 @@ class ListContainsQuery(Query):
             An optional prefix to add before the query path.  Used by 
             Record.mongoquery() to start each path with "content."
         """
+        # Get path and add prefix
         path = f'{prefix}{self.path}'
+
         if value is not None:
+        
+            # Add $and if needed
             if '$and' not in querydict:
                 querydict['$and'] = []
+
+            # Build a query for each given value
             for v in iaslist(value):
                 querydict['$and'].append({path:v})
 
-    def pandas(self, df, value):
+    def pandas(self, df: pd.DataFrame, value: Any) -> pd.Series:
         """
         Applies a query filter to the metadata for the field.
         
@@ -58,24 +69,64 @@ class ListContainsQuery(Query):
             Boolean map of matching values
         """
 
-        def apply_function(series, name, value, parent):
+        def apply_function(series: pd.Series,
+                           name: str,
+                           value: Any,
+                           parent: Optional[str]) -> bool:
+            """
+            function for pandas.DataFrame.apply with axis=1
+            
+            Parameters
+            ----------
+            series : pd.Series
+                A series of the DataFrame being operated on.
+            name : str
+                The element name.
+            value : any
+                The values to search for.
+            parent : str or None
+                The parent element name, if there is one.
+
+            Returns
+            -------
+            bool
+                True if value is None or if all values are contained in the/an
+                element being checked.
+            """
+            # Return True for all fields if value is None
             if value is None:
                 return True
             
             if parent is None:
+
+                # Check if name is in series
+                if name not in series or not isinstance(series[name], list):
+                    return False
+                
+                # Check if all values are in series[name]
                 for v in iaslist(value):
                     if v not in series[name]:
                         return False
                 return True
             
             else:
-                for p in iaslist(series[parent]):
-                    if name in p:
-                        for v in iaslist(value):
-                            if v not in p[name]:
-                                return False
-                        return True
-                    else:
-                        return False
 
+                # Loop over all child elements
+                for child in iaslist(series[parent]):
+
+                    # Check if child element has name
+                    if name in child and isinstance(series[name], list):
+                        match = True
+
+                    # Check if all values are in child[name]
+                        for v in iaslist(value):
+                            if v not in child[name]:
+                                match = False
+                        if match:
+                            return True
+                
+                # Return default False for no matching child elements
+                return False
+
+        # Use apply_function on df using value and object attributes
         return df.apply(apply_function, axis=1, args=(self.name, value, self.parent))
