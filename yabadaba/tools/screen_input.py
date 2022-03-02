@@ -1,6 +1,6 @@
 # coding: utf-8
 
-def screen_input(prompt=''):
+def screen_input(prompt: str = '') -> str:
     """
     Replacement input function that is compatible with the mingw terminal.
     
