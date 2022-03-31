@@ -1,6 +1,11 @@
 # coding: utf-8
 __all__ = ['Record', 'recordmanager', 'load_record']
 
+# Standard Python libraries
+from typing import Optional, Union
+
+from DataModelDict import DataModelDict as DM
+
 # Relative imports
 from .Record import Record
 from ..tools import ModuleManager
@@ -9,7 +14,10 @@ from ..tools import ModuleManager
 recordmanager = ModuleManager('Record')
 
 # Define load_record 
-def load_record(style, model=None, name=None, **kwargs):
+def load_record(style: str,
+                name: Optional[str] = None,
+                model: Union[str, DM, None] = None,
+                **kwargs) -> Record:
     """
     Loads a Record subclass associated with a given record style.
 
