@@ -15,8 +15,8 @@ recordmanager = ModuleManager('Record')
 
 # Define load_record 
 def load_record(style: str,
-                name: Optional[str] = None,
                 model: Union[str, DM, None] = None,
+                name: Optional[str] = None,
                 **kwargs) -> Record:
     """
     Loads a Record subclass associated with a given record style.

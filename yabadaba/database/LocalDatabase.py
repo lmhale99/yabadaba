@@ -340,7 +340,7 @@ class LocalDatabase(Database):
         
         # Create Record object if not given
         if record is None:
-            record = load_record(style, model, name=name)
+            record = load_record(style, model=model, name=name)
         
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None or model is not None:
@@ -421,7 +421,7 @@ class LocalDatabase(Database):
             if model is None:
                 raise TypeError('no new model given')
             
-            record = load_record(style, model, name=name)
+            record = load_record(style, model=model, name=name)
         
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
@@ -429,7 +429,7 @@ class LocalDatabase(Database):
         
         # Replace content in record object
         elif model is not None:
-            record = load_record(record.style, model, name=record.name)
+            record = load_record(record.style, model=model, name=record.name)
             
         # Check if record already exists
         style_dir = Path(self.host, record.style)

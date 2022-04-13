@@ -269,7 +269,7 @@ class CDCSDatabase(Database):
         
         # Create Record object if not given
         if record is None:
-            record = load_record(style, model, name=name)
+            record = load_record(style, model=model, name=name)
         
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None or model is not None:
@@ -343,7 +343,7 @@ class CDCSDatabase(Database):
             if model is None:
                 raise TypeError('no new model given')
             oldrecord = self.get_record(name=name, style=style)
-            record = load_record(oldrecord.style, model, name=oldrecord.name)
+            record = load_record(oldrecord.style, model=model, name=oldrecord.name)
         
         # Use given record object
         else:
@@ -352,7 +352,7 @@ class CDCSDatabase(Database):
             
             # Replace model in record object
             if model is not None:
-                record = load_record(record.style, model, name=record.name)
+                record = load_record(record.style, model=model, name=record.name)
         
         # Retrieve/build model contents
         try:
