@@ -2,6 +2,8 @@
 # Standard Python libraries
 from pathlib import Path
 
+from tqdm import tqdm
+
 # https://github.com/usnistgov/DataModelDict
 from DataModelDict import DataModelDict as DM
 
@@ -441,7 +443,7 @@ class Database():
         record_count = 0
         tar_count = 0
         # Copy records
-        for record in records:
+        for record in tqdm(records, 'copying records', ascii=True):
             try:
                 # Add new records
                 dest.add_record(record=record)
@@ -528,7 +530,7 @@ class Database():
             if test == 'yes':
                 count = 0
                 record_styles = set()
-                for record in records:
+                for record in tqdm(records, 'destroying records', ascii=True):
                     try:
                         self.delete_tar(record=record)
                     except:
