@@ -197,6 +197,43 @@ class MongoDatabase(Database):
         else:
             raise ValueError('Multiple matching records found')
 
+    def count_records(self, style=None, query=None, **kwargs):
+        """
+        Retrieves a count of matching records from the database.  Much faster
+        than get_records if you only want to know the number of matches.
+        
+        Parameters
+        ----------
+        style : str, optional
+            The record style to search.
+        query : dict, optional
+            A custom-built Mongo-style query to use for the record search.
+            Alternative to passing in the record-specific metadata keywords.
+        **kwargs : any, optional
+            Any of the record-specific metadata keywords that can be searched
+            for.
+            
+        Returns
+        ------
+        int
+            The count of records in the database matching the given parameters.
+        """
+        # Set default search parameters
+        if style is None:
+            style = self.select_record_style()
+
+        # Use given query
+        if query is not None:
+            assert len(kwargs) == 0, 'query cannot be given with kwargs'
+        else:
+            query = load_record(style).mongoquery(**kwargs)
+        
+        # Query the collection to construct records
+        collection = self.mongodb[style]
+        count = collection.count_documents(query)
+        
+        return count
+
     def add_record(self, record=None, style=None, name=None, model=None,
                    build=False, verbose=False):
         """
