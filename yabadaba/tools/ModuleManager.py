@@ -113,9 +113,35 @@ class ModuleManager():
         elif style not in self.loaded_style_names:
             raise KeyError(f'Unknown {self.parentname} style {style}')
 
+    def get_class(self, style):
+        """
+        Retrieves the class of the given style.
+
+        Parameters
+        ----------
+        style : str
+            The style name.
+
+        Returns
+        -------
+        class
+            The uninitialized class.
+        """
+        self.assert_style(style)
+        return self.loaded_styles[style]
+
     def init(self, style, *args, **kwargs):
         """
-        Initializes an object of the substyle
+        Initializes an object of the given style.
+
+        Parameters
+        ----------
+        style : str
+            The style name.
+        
+        Returns
+        Object
+            The initialized object.
         """
         self.assert_style(style)
         return self.loaded_styles[style](*args, **kwargs)
