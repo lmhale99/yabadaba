@@ -38,7 +38,8 @@ setup(name = 'yabadaba',
         'numpy', 
         'pandas',
         'cdcs>=0.1.5',
-        'pymongo'
+        'pymongo',
+        'tqdm',
       ],
       package_data={'': ['*']},
       zip_safe = False)
