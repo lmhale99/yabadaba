@@ -59,4 +59,6 @@ or
 Documentation
 -------------
 
-In progress.  Email lucas.hale@nist.gov for more information in the meantime.
+Documentation can be found in the doc folder in the github repository.
+
+For support, post a issue to github or email lucas.hale@nist.gov.
