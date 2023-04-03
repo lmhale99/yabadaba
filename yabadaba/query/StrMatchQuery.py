@@ -17,20 +17,18 @@ class StrMatchQuery(Query):
         """str: The query style"""
         return 'str_match'
 
-    @property
-    def description(self) -> str:
-        """str: Describes the query operation that the class performs."""
-        return 'Query a str field for specific values'
-
-    def mongo(self, querydict: dict, value: Any, prefix: str = ''):
+    def mongo(self,
+              querylist: list,
+              value: Any,
+              prefix: str = ''):
         """
         Builds a Mongo query operation for the field.
 
         Parameters
         ----------
-        querydict : dict
-            The set of mongo query operations that the new operation will be
-            added to.
+        querylist : list
+            The working list of mongo query operations which is to be appended
+            with the operation for this query object.
         value : any
             The value of the field to query on.  If None, then no new query
             operation will be added.
@@ -44,9 +42,11 @@ class StrMatchQuery(Query):
         if value is not None:
 
             # Build the query 
-            querydict[path] = {'$in': aslist(value)}
+            querylist.append( {path: {'$in': aslist(value)} } )
 
-    def pandas(self, df: pd.DataFrame, value: Any) -> pd.Series:
+    def pandas(self,
+               df: pd.DataFrame,
+               value: Any) -> pd.Series:
         """
         Applies a query filter to the metadata for the field.
         

@@ -10,9 +10,11 @@ class Query():
     Query object is associated with a specific data field.
     """
     
-    def __init__(self, name: Optional[str] = None,
+    def __init__(self,
+                 name: Optional[str] = None,
                  parent: Optional[str] = None,
-                 path: Optional[str] = None):
+                 path: Optional[str] = None,
+                 description: str = ''):
         """
         Query initialization
 
@@ -28,6 +30,8 @@ class Query():
         path : str or None, optional
             The record data path to the data field.  Levels are delimited by
             periods.  Must be given to use the mongo query method.
+        description : str, optional
+            Description of the query operation, i.e. what it is searching.
         """
         # Check that object is a subclass
         if self.__module__ == __name__:
@@ -36,6 +40,7 @@ class Query():
         self.name = name
         self.parent = parent
         self.path = path
+        self.description = description
 
     def __str__(self) -> str:
         """
@@ -99,18 +104,25 @@ class Query():
 
     @property
     def description(self) -> str:
-        """str: Describes the query operation that the class performs."""
-        raise NotImplementedError('Not defined for base class')
+        """str: Describes the query operation"""
+        return self.__description
+    
+    @description.setter
+    def description(self, value: str):
+        self.__description = str(value)
 
-    def mongo(self, querydict: dict, value: Any, prefix: str = ''):
+    def mongo(self,
+              querylist: list,
+              value: Any,
+              prefix: str = ''):
         """
         Builds a Mongo query operation for the field.
 
         Parameters
         ----------
-        querydict : dict
-            The set of mongo query operations that the new operation will be
-            added to.
+        querylist : list
+            The working list of mongo query operations which is to be appended
+            with the operation for this query object.
         value : any
             The value of the field to query on.  If None, then no new query
             operation will be added.
@@ -121,7 +133,9 @@ class Query():
         # Do nothing - base class
         pass
 
-    def pandas(self, df: pd.DataFrame, value: Any) -> pd.Series:
+    def pandas(self,
+               df: pd.DataFrame, 
+               value: Any) -> pd.Series:
         """
         Applies a query filter to the metadata for the field.
         

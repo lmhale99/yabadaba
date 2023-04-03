@@ -17,20 +17,18 @@ class ListContainsQuery(Query):
         """str: The query style"""
         return 'list_contains'
 
-    @property
-    def description(self) -> str:
-        """str: Describes the query operation that the class performs."""
-        return 'Query a str field for containing specific values'
-
-    def mongo(self, querydict: dict, value: Any, prefix: str = ''):
+    def mongo(self,
+              querylist: list,
+              value: Any,
+              prefix: str = ''):
         """
         Builds a Mongo query operation for the field.
 
         Parameters
         ----------
-        querydict : dict
-            The set of mongo query operations that the new operation will be
-            added to.
+        querylist : list
+            The working list of mongo query operations which is to be appended
+            with the operation for this query object.
         value : any
             The value of the field to query on.  If None, then no new query
             operation will be added.
@@ -43,15 +41,19 @@ class ListContainsQuery(Query):
 
         if value is not None:
         
-            # Add $and if needed
-            if '$and' not in querydict:
-                querydict['$and'] = []
+            # Init new query
+            newquery = {'$and': []}
 
             # Build a query for each given value
             for v in iaslist(value):
-                querydict['$and'].append({path:v})
+                newquery['$and'].append({path:v})
 
-    def pandas(self, df: pd.DataFrame, value: Any) -> pd.Series:
+            # Append newquery to querylist
+            querylist.append(newquery)
+
+    def pandas(self,
+               df: pd.DataFrame,
+               value: Any) -> pd.Series:
         """
         Applies a query filter to the metadata for the field.
         
@@ -72,7 +74,7 @@ class ListContainsQuery(Query):
         def apply_function(series: pd.Series,
                            name: str,
                            value: Any,
-                           parent: Optional[str]) -> bool:
+                           parent: Optional[str] = None) -> bool:
             """
             function for pandas.DataFrame.apply with axis=1
             
