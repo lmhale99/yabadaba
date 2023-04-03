@@ -4,6 +4,7 @@ from pathlib import Path
 import shutil
 import tarfile
 from io import BytesIO
+from typing import Optional, Tuple, Union
 
 # https://github.com/usnistgov/pycdcs
 from cdcs import CDCS
@@ -21,7 +22,15 @@ from .. import load_record, recordmanager
 
 class CDCSDatabase(Database):
     
-    def __init__(self, host, username=None, password=None, cert=None, verify=True):
+    def __init__(self,
+                 host: str,
+                 username: Optional[str] = None,
+                 password: Optional[str] = None,
+                 auth: Optional[Tuple[str]] = None,
+                 cert: Union[str, Tuple[str], None] = None, 
+                 certification: Union[str, Tuple[str], None] = None,
+                 verify: Optional[bool] = True,
+                 cdcsversion: Optional[str] = None):
         """
         Initializes a database of style curator.
         
@@ -29,18 +38,31 @@ class CDCSDatabase(Database):
         ----------
         host : str
             The host name (url) for the database.
-        username : str or tuple of two str
-            The username to use for accessing the database.  Alternatively, a
-            tuple of (username, password).
+        username : str, optional
+            Username of desired account on the server. A prompt will ask for
+            the username if not given.
         password : str, optional
-            The password associated with username to use for accessing the database.
-            This can either be the password as a str, or a str path to a file
-            containing only the password. If not given, a prompt will ask for the
-            password.
+            Password of desired account on the server.  This can either be the
+            password as a str, or a str path to a file containing only the
+            password.  A prompt will ask for the password if not given.
+        auth : tuple, optional
+            Auth tuple to enable Basic/Digest/Custom HTTP Auth.  Alternative to
+            giving username and password separately.
         cert : str, optional
-            The path to a certification file if needed for accessing the database.
-        verify : bool, optional
-            Indicates if verifications for the site are used
+            if String, path to ssl client cert file (.pem). If Tuple,
+            ('cert', 'key') pair.
+        certification : str, optional
+            Alias for cert. Retained for compatibility.
+        verify : bool or str, optional
+            Either a boolean, in which case it controls whether we verify the
+            server's TLS certificate, or a string, in which case it must be a
+            path to a CA bundle to use. Defaults to True.
+        cdcsversion : str, optional
+            For CDCS versions 2.X.X, this allows for specifying the full CDCS
+            version to ensure the class methods perform the correct REST
+            calls.  This can be specified as "#.#.#", or if None is given will
+            default to "2.15.0".  For CDCS versions 3.X.X, this is ignored as
+            version info is obtained directly from the database.
         """
         
         # Fetch password from file if needed
@@ -51,8 +73,9 @@ class CDCSDatabase(Database):
             pass
         
         # Pass parameters to cdcs object
-        self.__cdcs = CDCS(host, username=username, password=password,
-                         cert=cert, verify=verify)
+        self.__cdcs = CDCS(host, username=username, password=password, auth=auth,
+                           cert=cert, certification=certification, verify=verify,
+                           cdcsversion=cdcsversion)
         
         # Pass host to Database initializer
         Database.__init__(self, host)
