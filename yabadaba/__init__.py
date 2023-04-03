@@ -14,6 +14,7 @@ __all__ = ['__version__', 'tools', 'settings', 'record', 'load_record']
 __all__.sort()
 
 # Relative imports
+from .UnitConverter import unitconvert
 from . import tools
 from .Settings import settings
 
