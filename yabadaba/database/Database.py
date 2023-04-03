@@ -8,7 +8,7 @@ from tqdm import tqdm
 from DataModelDict import DataModelDict as DM
 
 # iprPy imports
-from ..record import recordmanager
+from ..record import recordmanager, load_record
 from ..tools import screen_input
 
 class Database():
@@ -295,7 +295,7 @@ class Database():
         Parameters
         ----------
         record : Record, optional
-            The record to retrive the associated tar archive for.
+            The record to retrieve the associated tar archive for.
         style : str, optional
             The style to use in uniquely identifying the record.
         name : str, optional
@@ -413,7 +413,7 @@ class Database():
             given, then the available record styles will be listed and the
             user prompted to pick one.  Cannot be given with records.
         records : list, optional
-            A list of Record obejcts from the current database to copy
+            A list of Record objects from the current database to copy
             to dbase2.  Allows the user full control on which records to
             copy/update.  Cannot be given with record_style.
         includetar : bool, optional
@@ -568,3 +568,14 @@ class Database():
         print()
         
         return record_style
+
+    def record_querynames(self,
+                          style: str) -> list:
+        """Return the list of query parameter names for a given record style"""
+        return load_record(style).querynames
+    
+    def record_querydoc(self,
+                        style: str) -> str:
+        """Return the description of query parameters for a given record style"""
+        return load_record(style).querydoc
+
