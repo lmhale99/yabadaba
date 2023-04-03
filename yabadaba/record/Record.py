@@ -32,6 +32,8 @@ class Record():
             The unique name to assign to the record.  If model is a file
             path, then the default record name is the file name without
             extension.
+        kwargs : any
+            Any record-specific attributes to assign.
         """
         self.__model = None
         self.__name = None
@@ -59,14 +61,14 @@ class Record():
             try:
                 if Path(model).is_file():
                     self.name = Path(model).stem
-            except:
+            except (ValueError, OSError):
                 pass
         else:
             self.name = name
 
         self._set_model(model)
 
-    def set_values(self, name=None, **kwargs):
+    def set_values(self, name=None):
         """
         Set multiple object attributes at the same time.
 
@@ -78,7 +80,9 @@ class Record():
         kwargs : any
             Any record-specific attributes to assign.
         """
-        raise NotImplementedError('Not defined for this class')
+        # Set name if given
+        if name is not None:
+            self.name = name
 
     def __str__(self):
         """str: The string representation of the record"""
@@ -149,10 +153,14 @@ class Record():
         Sets model content - called by build_model() and load_model() to update
         content.  Use load_model() if you are passing in an external model.
         """
-        
-        # Load model as DataModelDict
-        content = DM(model).find(self.modelroot)
-        self.__model = DM([(self.modelroot, content)])
+        try:
+            modelroot = self.modelroot
+        except NotImplementedError:
+            self.__model = DM(model)
+        else:
+            # Load model as DataModelDict
+            content = DM(model).find(modelroot)
+            self.__model = DM([(modelroot, content)])
 
     def build_model(self):
         """
@@ -166,12 +174,27 @@ class Record():
         Useful for quickly comparing records and for building pandas.DataFrames
         for multiple records of the same style.
         """
-        raise NotImplementedError('Specific to subclasses')
+        return {}
     
     @property
-    def queries(self):
+    def queries(self) -> dict:
         """dict: Query objects and their associated parameter names."""
         return {}
+
+    @property
+    def querynames(self) -> list:
+        """list: The query parameter names supported by the record."""
+        return list(self.queries.keys())
+
+    @property
+    def querydoc(self) -> str:
+        """str: A description of all the queries supported by the record."""
+        doc = f'# {self.style} Query Parameters\n\n'
+        for name in self.queries:
+            query = self.queries[name]
+            doc += f'- __{name}__ ({query.style}): {query.description}\n'
+        
+        return doc
 
     def pandasfilter(self, dataframe, name=None, **kwargs):
         """
@@ -188,7 +211,7 @@ class Record():
         
         Returns
         -------
-        pandas.Series, numpy.NDArray?
+        pandas.Series
             Boolean map of matching values
         """
         # Get defined queries
@@ -222,15 +245,16 @@ class Record():
         # Get the dict of queries
         queries = self.queries
 
-        # Initialize the query dictionary
+        # Initialize the full query dict and list of query operations
         querydict = {}
+        querydict['$and'] = querylist = [{}]
 
         # Query name
-        load_query('str_match', path='name').mongo(querydict, name)
+        load_query('str_match', path='name').mongo(querylist, name)
 
         # Apply queries based on given kwargs
         for key in kwargs:
-            queries[key].mongo(querydict, kwargs[key], prefix='content.')
+            queries[key].mongo(querylist, kwargs[key], prefix='content.')
         
         return querydict
 
@@ -253,10 +277,11 @@ class Record():
 
         # Initialize the query dictionary
         querydict = {}
+        querydict['$and'] = querylist = [{}]
 
         # Apply queries based on given kwargs
         for key in kwargs:
-            queries[key].mongo(querydict, kwargs[key])
+            queries[key].mongo(querylist, kwargs[key])
         
         return querydict
 
