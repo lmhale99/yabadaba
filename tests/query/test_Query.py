@@ -59,7 +59,7 @@ class BaseTestQuery():
         raise NotImplementedError('needs to be defined for subclass')
 
     @property
-    def df(series) -> pd.DataFrame:
+    def df(self) -> pd.DataFrame:
         """pd.Dataframe: demo data for filter testing"""
         raise NotImplementedError('needs to be defined for subclass')
 

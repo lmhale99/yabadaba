@@ -5,11 +5,11 @@ from yabadaba import load_query
 from test_Query import BaseTestQuery
 import pandas as pd
 
-class TestStrContainsQuery(BaseTestQuery):
+class TestFloatMatchQuery(BaseTestQuery):
 
     @property
     def style(self) -> str:
-        return 'list_contains'
+        return 'float_match'
 
     def test_mongo(self):
         """Tests mongo query"""
@@ -25,28 +25,26 @@ class TestStrContainsQuery(BaseTestQuery):
 
         # Check single value
         querylist = []
-        query.mongo(querylist, 'value')
+        query.mongo(querylist, 57)
         querydict = querylist[0]
-        querydict = querylist[0]
-        assert len(querydict['$and']) == 1
-        assert querydict['$and'][0]['root.element'] == 'value'
+        assert querydict['$or'][0]['root.element']['$gte'] == 56.99999
+        assert querydict['$or'][0]['root.element']['$lte'] == 57.00001
 
         # Check multiple values
         querylist = []
-        query.mongo(querylist, ['value1', 'value2'])
+        query.mongo(querylist, [105, '95'])
         querydict = querylist[0]
-        querydict = querylist[0]
-        assert len(querydict['$and']) == 2
-        assert querydict['$and'][0]['root.element'] == 'value1'
-        assert querydict['$and'][1]['root.element'] == 'value2'
+        assert querydict['$or'][0]['root.element']['$gte'] == 104.99999
+        assert querydict['$or'][0]['root.element']['$lte'] == 105.00001
+        assert querydict['$or'][1]['root.element']['$gte'] == 94.99999
+        assert querydict['$or'][1]['root.element']['$lte'] == 95.00001
 
         # Check single value with prefix
         querylist = []
-        query.mongo(querylist, 'value', prefix='content.')
+        query.mongo(querylist, 57, prefix='content.')
         querydict = querylist[0]
-        querydict = querylist[0]
-        assert len(querydict['$and']) == 1
-        assert querydict['$and'][0]['content.root.element'] == 'value'
+        assert querydict['$or'][0]['content.root.element']['$gte'] == 56.99999
+        assert querydict['$or'][0]['content.root.element']['$lte'] == 57.00001
 
     @property
     def df(self) -> pd.DataFrame:
@@ -55,37 +53,37 @@ class TestStrContainsQuery(BaseTestQuery):
         return pd.DataFrame([
             {
                 'name': 'first',
-                'thisguy': ['value1'],
+                'thisguy': 57,
                 'parent': [
                     {
-                        'thisguy': ['pop', 'goes', 'the', 'weasel']
+                        'thisguy': 7
                     },
                     {
-                        'thisguy': ['zoot', 'suit', 'riot']
+                        'thisguy': 80
                     }
                 ],
             },
             {
                 'name': 'second',
-                'thisguy': ['value1', 'value2'],
+                'thisguy': '95',
                 'parent': [
                     {
-                        'thisguy': ['live', 'and', 'let', 'die']
+                        'thisguy': '12'
                     },
                     {
-                        'thisguy': ['flying', 'microtonal', 'banana']
+                        'thisguy': '-8'
                     }
                 ],
             },
             {
                 'name': 'third',
-                'thisguy': ['value3', 'value4'],
+                'thisguy': 105,
                 'parent': [
                     {
-                        'thisguy': ['funk', '#49']
+                        'thisguy': 50
                     },
                     {
-                        'thisguy': ['wheels', 'on', 'the', 'bus']
+                        'thisguy': 6785
                     }
                 ],
             },
@@ -105,19 +103,19 @@ class TestStrContainsQuery(BaseTestQuery):
         assert len(df2) == 3
 
         # Test single missing value
-        df2 = df[query.pandas(df, 'NOT THERE')]
+        df2 = df[query.pandas(df, 0)]
         assert len(df2) == 0
 
         # Test single value
-        df2 = df[query.pandas(df, 'value1')]
-        assert len(df2) == 2
+        df2 = df[query.pandas(df, 57)]
+        assert len(df2) == 1
         assert df2.name.tolist()[0] == 'first'
-        assert df2.name.tolist()[1] == 'second'
 
         # Test multiple values
-        df2 = df[query.pandas(df, ['value1', 'value2'])]
-        assert len(df2) == 1
+        df2 = df[query.pandas(df, [95, '105'])]
+        assert len(df2) == 2
         assert df2.name.tolist()[0] == 'second'
+        assert df2.name.tolist()[1] == 'third'
 
     def test_pandas_parent(self):
         """Tests pandas filter with a parent element"""
@@ -140,33 +138,35 @@ class TestStrContainsQuery(BaseTestQuery):
         assert len(df2) == 3
 
         # Test single missing value
-        df2 = df[query.pandas(df, 'NOT THERE')]
+        df2 = df[query.pandas(df, 0)]
         assert len(df2) == 0
 
         # Test single value
-        df2 = df[query.pandas(df, 'the')]
+        df2 = df[query.pandas(df, -8)]
+        assert len(df2) == 1
+        assert df2.name.tolist()[0] == 'second'
+
+        # Test multiple values
+        df2 = df[query.pandas(df, [7, '50'])]
         assert len(df2) == 2
         assert df2.name.tolist()[0] == 'first'
         assert df2.name.tolist()[1] == 'third'
-
-        # Test multiple values
-        df2 = df[query.pandas(df, ['the', 'bus'])]
-        assert len(df2) == 1
-        assert df2.name.tolist()[0] == 'third'
 
     def test_inline(self):
         """This tests the old non-class version of the queries"""
 
         # Test mongo
         querylist = []
-        load_query('list_contains', path='root.element').mongo(querylist, ['value1', 'value2'])
+        load_query('float_match', path='root.element').mongo(querylist, [105, '95'])
         querydict = querylist[0]
-        assert len(querydict['$and']) == 2
-        assert querydict['$and'][0]['root.element'] == 'value1'
-        assert querydict['$and'][1]['root.element'] == 'value2'
+        assert querydict['$or'][0]['root.element']['$gte'] == 104.99999
+        assert querydict['$or'][0]['root.element']['$lte'] == 105.00001
+        assert querydict['$or'][1]['root.element']['$gte'] == 94.99999
+        assert querydict['$or'][1]['root.element']['$lte'] == 95.00001
 
         # Test pandas
         df = self.df
-        df2 = df[load_query('list_contains', name='thisguy', parent='parent').pandas(df, ['the', 'bus'])]
-        assert len(df2) == 1
-        assert df2.name.tolist()[0] == 'third'
+        df2 = df[load_query('float_match', name='thisguy', parent='parent').pandas(df, [7, '50'])]
+        assert len(df2) == 2
+        assert df2.name.tolist()[0] == 'first'
+        assert df2.name.tolist()[1] == 'third'

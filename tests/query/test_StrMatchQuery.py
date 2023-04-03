@@ -1,9 +1,5 @@
 # coding: utf-8
 
-# https://docs.pytest.org/en/latest/
-from pytest import raises
-
-import yabadaba
 from yabadaba import load_query
 
 from test_Query import BaseTestQuery
@@ -23,23 +19,26 @@ class TestStrMatchQuery(BaseTestQuery):
         assert query.path == 'root.element'
 
         # Test None value
-        querydict = {}
-        query.mongo(querydict, None)
-        assert len(querydict) == 0
+        querylist = []
+        query.mongo(querylist, None)
+        assert len(querylist) == 0
 
         # Check single value
-        querydict = {}
-        query.mongo(querydict, 'value')
+        querylist = []
+        query.mongo(querylist, 'value')
+        querydict = querylist[0]
         assert querydict['root.element']['$in'] == ['value']
 
         # Check multiple values
-        querydict = {}
-        query.mongo(querydict, ['value1', 'value2'])
+        querylist = []
+        query.mongo(querylist, ['value1', 'value2'])
+        querydict = querylist[0]
         assert querydict['root.element']['$in'] == ['value1', 'value2']
 
         # Check single value with prefix
-        querydict = {}
-        query.mongo(querydict, 'value', prefix='content.')
+        querylist = []
+        query.mongo(querylist, 'value', prefix='content.')
+        querydict = querylist[0]
         assert querydict['content.root.element']['$in'] == ['value']
 
     @property
@@ -152,17 +151,15 @@ class TestStrMatchQuery(BaseTestQuery):
     def test_inline(self):
         """This tests the old non-class version of the queries"""
 
-        assert isinstance(yabadaba.query.str_match.description(), str)
-
         # Test mongo
-        querydict = {}
-        yabadaba.query.str_match.mongo(querydict, 'root.element', ['value1', 'value2'])
+        querylist = []
+        load_query('str_match', path='root.element').mongo(querylist, ['value1', 'value2'])
+        querydict = querylist[0]
         assert querydict['root.element']['$in'] == ['value1', 'value2']
 
         # Test pandas
         df = self.df
-        df2 = df[yabadaba.query.str_match.pandas(df, 'thisguy', ['child field with value1', 'child field with value1 and value2'],
-                                                    parent='parent')]
+        df2 = df[load_query('str_match', name='thisguy', parent='parent').pandas(df, ['child field with value1', 'child field with value1 and value2'])]
         assert len(df2) == 2
         assert df2.name.tolist()[0] == 'second'
         assert df2.name.tolist()[1] == 'third'

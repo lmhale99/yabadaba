@@ -1,9 +1,5 @@
 # coding: utf-8
 
-# https://docs.pytest.org/en/latest/
-from pytest import raises
-
-import yabadaba
 from yabadaba import load_query
 
 from test_Query import BaseTestQuery
@@ -23,23 +19,26 @@ class TestIntMatchQuery(BaseTestQuery):
         assert query.path == 'root.element'
 
         # Test None value
-        querydict = {}
-        query.mongo(querydict, None)
-        assert len(querydict) == 0
+        querylist = []
+        query.mongo(querylist, None)
+        assert len(querylist) == 0
 
         # Check single value
-        querydict = {}
-        query.mongo(querydict, 57)
+        querylist = []
+        query.mongo(querylist, 57)
+        querydict = querylist[0]
         assert querydict['root.element']['$in'] == [57]
 
         # Check multiple values
-        querydict = {}
-        query.mongo(querydict, [105, '95'])
+        querylist = []
+        query.mongo(querylist, [105, '95'])
+        querydict = querylist[0]
         assert querydict['root.element']['$in'] == [105, 95]
 
         # Check single value with prefix
-        querydict = {}
-        query.mongo(querydict, 57, prefix='content.')
+        querylist = []
+        query.mongo(querylist, 57, prefix='content.')
+        querydict = querylist[0]
         assert querydict['content.root.element']['$in'] == [57]
 
     @property
@@ -151,17 +150,15 @@ class TestIntMatchQuery(BaseTestQuery):
     def test_inline(self):
         """This tests the old non-class version of the queries"""
 
-        assert isinstance(yabadaba.query.int_match.description(), str)
-
         # Test mongo
-        querydict = {}
-        yabadaba.query.int_match.mongo(querydict, 'root.element', [105, '95'])
+        querylist = []
+        load_query('int_match', path='root.element').mongo(querylist, [105, '95'])
+        querydict = querylist[0]
         assert querydict['root.element']['$in'] == [105, 95]
 
         # Test pandas
         df = self.df
-        df2 = df[yabadaba.query.int_match.pandas(df, 'thisguy', [7, '50'],
-                                                    parent='parent')]
+        df2 = df[load_query('int_match', name='thisguy', parent='parent').pandas(df, [7, '50'])]
         assert len(df2) == 2
         assert df2.name.tolist()[0] == 'first'
         assert df2.name.tolist()[1] == 'third'

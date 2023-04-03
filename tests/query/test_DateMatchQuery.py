@@ -1,10 +1,6 @@
 # coding: utf-8
 from datetime import date
 
-# https://docs.pytest.org/en/latest/
-from pytest import raises
-
-import yabadaba
 from yabadaba import load_query
 
 from test_Query import BaseTestQuery
@@ -24,23 +20,26 @@ class TestDateMatchQuery(BaseTestQuery):
         assert query.path == 'root.element'
 
         # Test None value
-        querydict = {}
-        query.mongo(querydict, None)
-        assert len(querydict) == 0
+        querylist = []
+        query.mongo(querylist, None)
+        assert len(querylist) == 0
 
         # Check single value
-        querydict = {}
-        query.mongo(querydict, date(2017, 2, 16))
+        querylist = []
+        query.mongo(querylist, date(2017, 2, 16))
+        querydict = querylist[0]
         assert querydict['root.element']['$in'] == ['2017-02-16']
 
         # Check multiple values
-        querydict = {}
-        query.mongo(querydict, [date(2017, 2, 16), date(2019, 7, 28)])
+        querylist = []
+        query.mongo(querylist, [date(2017, 2, 16), date(2019, 7, 28)])
+        querydict = querylist[0]
         assert querydict['root.element']['$in'] == ['2017-02-16', '2019-07-28']
 
         # Check single value with prefix
-        querydict = {}
-        query.mongo(querydict, date(2017, 2, 16), prefix='content.')
+        querylist = []
+        query.mongo(querylist, date(2017, 2, 16), prefix='content.')
+        querydict = querylist[0]
         assert querydict['content.root.element']['$in'] == ['2017-02-16']
 
     @property
@@ -152,17 +151,15 @@ class TestDateMatchQuery(BaseTestQuery):
     def test_inline(self):
         """This tests the old non-class version of the queries"""
 
-        assert isinstance(yabadaba.query.str_contains.description(), str)
-
         # Test mongo
-        querydict = {}
-        yabadaba.query.date_match.mongo(querydict, 'root.element', [date(2017, 2, 16), date(2019, 7, 28)])
+        querylist = []
+        load_query('date_match', path='root.element').mongo(querylist, [date(2017, 2, 16), date(2019, 7, 28)])
+        querydict = querylist[0]
         assert querydict['root.element']['$in'] == ['2017-02-16', '2019-07-28']
-
+        
         # Test pandas
         df = self.df
-        df2 = df[yabadaba.query.date_match.pandas(df, 'thisguy', [date(2015, 7, 5), date(1875, 2, 7)],
-                                                    parent='parent')]
+        df2 = df[load_query('date_match', name='thisguy', parent='parent').pandas(df, [date(2015, 7, 5), date(1875, 2, 7)])]
         assert len(df2) == 2
         assert df2.name.tolist()[0] == 'second'
         assert df2.name.tolist()[1] == 'third'

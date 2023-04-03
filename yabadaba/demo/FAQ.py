@@ -136,70 +136,9 @@ class FAQ(Record):
         """dict: Query objects and their associated parameter names."""
         return {
             'question': load_query('str_contains',
-                name='question', path=f'{self.modelroot}.question'),
+                name='question', path=f'{self.modelroot}.question',
+                description='Search the FAQ question field to see if it contains certain strings.'),
             'answer': load_query('str_contains',
-                name='answer', path=f'{self.modelroot}.answer'),
+                name='answer', path=f'{self.modelroot}.answer',
+                description='Search the FAQ answer field to see if it contains certain strings.')
         }
-    
-    def pandasfilter(self, dataframe, name=None, question=None, answer=None):
-        """
-        Filters a pandas.DataFrame based on kwargs values for the record style.
-        
-        Parameters
-        ----------
-        dataframe : pandas.DataFrame
-            A table of metadata for multiple records of the record style.
-        name : str or list
-            The record name(s) to parse by.
-        question : str or list
-            Term(s) to search for in the question field.
-        answer : str or list
-            Term(s) to search for in the answer field.
-        
-        Returns
-        -------
-        pandas.Series, numpy.NDArray
-            Boolean map of matching values
-        """
-        matches = super().pandasfilter(dataframe, name=name, question=question, answer=answer)
-        return matches
-
-    def mongoquery(self, name=None, question=None, answer=None):
-        """
-        Builds a Mongo-style query based on kwargs values for the record style.
-        
-        Parameters
-        ----------
-        name : str or list
-            The record name(s) to parse by.
-        question : str or list
-            Term(s) to search for in the question field.
-        answer : str or list
-            Term(s) to search for in the answer field.
-        
-        Returns
-        -------
-        dict
-            The Mongo-style query
-        """     
-        mquery = super().mongoquery(name=name, question=question, answer=answer)
-        return mquery
-
-    def cdcsquery(self, question=None, answer=None):
-        """
-        Builds a CDCS-style query based on kwargs values for the record style.
-        
-        Parameters
-        ----------
-        question : str or list
-            Term(s) to search for in the question field.
-        answer : str or list
-            Term(s) to search for in the answer field.
-        
-        Returns
-        -------
-        dict
-            The CDCS-style query
-        """
-        mquery = super().cdcsquery(question=question, answer=answer)
-        return mquery
