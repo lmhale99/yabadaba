@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
 def getreadme():
-    with open('README.rst') as readme_file:
+    with open('README.rst', encoding='utf-8') as readme_file:
         return readme_file.read()
 
 def getversion():
     """Fetches version information from VERSION file"""
-    with open('yabadaba/VERSION') as version_file:
+    with open('yabadaba/VERSION', encoding='utf-8') as version_file:
         return version_file.read().strip()
 
 setup(name = 'yabadaba',
@@ -20,6 +20,8 @@ setup(name = 'yabadaba',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'Topic :: Scientific/Engineering :: Physics'
       ],
       keywords = [
@@ -37,7 +39,7 @@ setup(name = 'yabadaba',
         'IPython',
         'numpy', 
         'pandas',
-        'cdcs>=0.1.5',
+        'cdcs>=0.2.1',
         'pymongo',
         'tqdm',
       ],

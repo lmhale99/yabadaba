@@ -17,6 +17,11 @@ class StrMatchQuery(Query):
         """str: The query style"""
         return 'str_match'
 
+    @property
+    def parameter_type(self) -> str:
+        """str: The types of query parameter values accepted by this query style"""
+        return 'str or list, optional'
+
     def mongo(self,
               querylist: list,
               value: Any,

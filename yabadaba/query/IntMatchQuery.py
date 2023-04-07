@@ -18,6 +18,11 @@ class IntMatchQuery(Query):
         """str: The query style"""
         return 'int_match'
 
+    @property
+    def parameter_type(self) -> str:
+        """str: The types of query parameter values accepted by this query style"""
+        return 'int or list, optional'
+
     def mongo(self,
               querylist: list,
               value: Any,

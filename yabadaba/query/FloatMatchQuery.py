@@ -59,6 +59,11 @@ class FloatMatchQuery(Query):
         return 'float_match'
 
     @property
+    def parameter_type(self) -> str:
+        """str: The types of query parameter values accepted by this query style"""
+        return 'float or list, optional'
+
+    @property
     def unit(self) -> str:
         """str : The unit to use for the query value"""
         return self.__unit

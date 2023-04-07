@@ -57,6 +57,11 @@ class Query():
         raise NotImplementedError('Not defined for base class')
 
     @property
+    def parameter_type(self) -> str:
+        """str: The types of query parameter values accepted by this query style"""
+        return 'str or list, optional'
+
+    @property
     def name(self) -> str:
         """str: The metadata key associated with the data field"""
         if self.__name is None:
