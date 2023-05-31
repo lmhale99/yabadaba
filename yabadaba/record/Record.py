@@ -4,6 +4,7 @@ from pathlib import Path
 from importlib import resources
 from typing import Union, Optional
 import io
+from tarfile import TarFile
 
 # https://ipython.org/
 from IPython.core.display import display, HTML
@@ -27,6 +28,7 @@ class Record():
     def __init__(self,
                  model: Union[str, io.IOBase, DM, None] = None,
                  name: Optional[str] = None,
+                 database = None,
                  **kwargs: any):
         """
         Initializes a Record object for a given style.
@@ -39,11 +41,18 @@ class Record():
             The unique name to assign to the record.  If model is a file
             path, then the default record name is the file name without
             extension.
+        database : yabadaba.Database, optional
+            A default Database to associate with the Record, typically the
+            Database that the Record was obtained from.  Can allow for Record
+            methods to perform Database operations without needing to specify
+            which Database to use.
         kwargs : any
             Any record-specific attributes to assign.
         """
         self.__model = None
         self.__name = None
+        self.tar = None
+        self.database = database
 
         if model is not None:
             assert len(kwargs) == 0, f"cannot specify kwargs with model: '{kwargs.keys()}'"
@@ -294,7 +303,7 @@ class Record():
         # Apply queries based on given kwargs
         for key in kwargs:
             queries[key].mongo(querylist, kwargs[key])
-        
+
         return querydict
 
     def html(self,
@@ -360,3 +369,90 @@ class Record():
 
         schema = ET.XMLSchema(xsd)
         return schema.validate(xml)
+
+    @property
+    def database(self):
+        """yabadaba.Database or None: The default Database associated with the Record"""
+        return self.__database
+
+    @database.setter
+    def database(self, value):
+        if value is None or hasattr(value, 'get_records'):
+            self.__database = value
+        else:
+            raise TypeError('database must be a yabadaba.Database or None')
+
+    @property
+    def tar(self):
+        """tarfile.TarFile: The tar archive associated with the record"""
+        # Return tarfile if set
+        if self.__tar is not None:
+            return self.__tar
+
+        # Check if database is set
+        if self.database is None:
+            raise ValueError('tar not loaded and no database set')
+
+        # Fetch tar from database, set to cache and return
+        self.tar = self.database.get_tar(record=self)
+        return self.__tar
+
+    @tar.setter
+    def tar(self, value: Optional[TarFile]):
+        if value is None or isinstance(value, TarFile):
+            self.__tar = value
+        else:
+            raise TypeError('tar must ne a TarFile or None')
+
+    def clear_tar(self):
+        """Closes and unsets the record's tar file to save memory"""
+        if self.__tar is not None:
+            self.__tar.close()
+            self.tar = None
+
+    def get_file(self,
+                 filename: Union[str, Path],
+                 localroot: Union[str, Path, None] = None):
+        """
+        Retrieves a file either locally or from the record's tar archive.
+
+        Parameters
+        ----------
+        filename : str or Path
+            The name/path for the file.  For local files, this is taken
+            relative to localroot.  For files in the tar archive, this is taken
+            relative to the tar's root directory which is always named for the
+            record, i.e., {self.name}/{filename}.
+        localroot : str, Path or None, optional
+            The local root directory that filename (if it exists) is relative
+            to.  The default value of None will use the current working
+            directory.
+        
+        Raises
+        ------
+        ValueError
+            If filename exists in the tar but is not a file.
+
+        Returns
+        -------
+        io.IOBase
+            A file-like object in binary read mode that allows for the file
+            contents to be read.
+        """
+        # Set default root path
+        if localroot is None:
+            localroot = Path.cwd()
+        else:
+            localroot = Path(localroot)
+
+        # Return local copy of file if it exists
+        localfile = Path(localroot, filename)
+        if Path(localfile).is_file():
+            return open(localfile, 'rb')
+
+        # Return file extracted from tar
+        fileio = self.tar.extractfile(f'{self.name}/{filename}')
+        if fileio is not None:
+            return fileio
+        else:
+            raise ValueError(f'{filename} exists in tar, but is not a file')

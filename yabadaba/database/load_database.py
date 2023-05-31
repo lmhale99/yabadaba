@@ -66,7 +66,7 @@ def load_database(name=None, style=None, host=None, settings=None,
                 choice = screen_input(':')
                 try:
                     choice = int(choice)
-                except:
+                except ValueError:
                     name = choice
                 else:
                     name = database_names[choice-1]
@@ -75,12 +75,10 @@ def load_database(name=None, style=None, host=None, settings=None,
         
         try:
             kwargs = settings.databases[name]
-        except:
-            raise ValueError(f'database {name} not found')
+        except KeyError as err:
+            raise KeyError(f'database {name} not found') from err
 
         style = kwargs.pop('style')
         host = kwargs.pop('host')
 
     return databasemanager.init(style, host=host, **kwargs)
-        
-    

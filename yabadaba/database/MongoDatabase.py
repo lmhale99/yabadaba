@@ -24,7 +24,7 @@ from . import Database
 from .. import load_record, recordmanager
 
 class MongoDatabase(Database):
-    
+
     def __init__(self, host='localhost', port=27017, database='iprPy', **kwargs):
         """
         Initializes a connection to a Mongo database.
@@ -43,19 +43,19 @@ class MongoDatabase(Database):
             Any extra keyword arguments needed to initialize a
             pymongo.MongoClient object.
         """
-        
+
         # Connect to underlying class
         self.__mongodb = MongoClient(host=host, port=port, document_class=DM, **kwargs)[database]
-        
+
         # Define class host using client's host, port and database name
         host = self.mongodb.client.address[0]
         port =self.mongodb.client.address[1]
         database = self.mongodb.name
         host = f'{host}:{port}.{database}'
-        
+
         # Pass host to Database initializer
         Database.__init__(self, host)
-    
+
     @property
     def style(self):
         """str: The database style"""
@@ -65,7 +65,7 @@ class MongoDatabase(Database):
     def mongodb(self):
         """pymongo.Database : The underlying database API object."""
         return self.__mongodb
-    
+
     def get_records(self, style=None, return_df=False, query=None, **kwargs):
         """
         Produces a list of all matching records in the database.
@@ -101,13 +101,13 @@ class MongoDatabase(Database):
             assert len(kwargs) == 0, 'query cannot be given with kwargs'
         else:
             query = load_record(style).mongoquery(**kwargs)
-        
+
         # Query the collection to construct records
         records = []
         collection = self.mongodb[style]
         for entry in collection.find(query):
             record = load_record(style, model=entry['content'],
-                                 name=entry['name'])
+                                 name=entry['name'], database=self)
             records.append(record)
         records = np.array(records)
 
@@ -151,7 +151,7 @@ class MongoDatabase(Database):
             The corresponding metadata values for the records.
         """
         return self.get_records(style, query=query, return_df=True, **kwargs)[1]
-    
+
     def get_record(self, style=None, query=None, **kwargs):
         """
         Retrieves a single matching record from the database.
@@ -177,7 +177,7 @@ class MongoDatabase(Database):
         ValueError
             If multiple or no matching records found.
         """
-        
+
         if style is None:
             styles = recordmanager.loaded_style_names
         else:
@@ -188,7 +188,7 @@ class MongoDatabase(Database):
         for style in styles:
             records.append(self.get_records(style, query=query, **kwargs))
         records = np.hstack(records)
-        
+
         # Verify that there is only one matching record
         if len(records) == 1:
             return records[0]
@@ -227,11 +227,11 @@ class MongoDatabase(Database):
             assert len(kwargs) == 0, 'query cannot be given with kwargs'
         else:
             query = load_record(style).mongoquery(**kwargs)
-        
+
         # Query the collection to construct records
         collection = self.mongodb[style]
         count = collection.count_documents(query)
-        
+
         return count
 
     def add_record(self, record=None, style=None, name=None, model=None,
@@ -297,7 +297,7 @@ class MongoDatabase(Database):
         entry = OrderedDict()
         entry['name'] = record.name
         entry['content'] = model
-        
+
         # Upload to mongodb
         self.mongodb[record.style].insert_one(entry)
 
@@ -346,39 +346,39 @@ class MongoDatabase(Database):
         ValueError
             If style and/or name content given with record.
         """
-        
+
         # Create Record object if not given
         if record is None:
             if model is None:
                 raise TypeError('no new model given')
             oldrecord = self.get_record(name=name, style=style)
             record = load_record(oldrecord.style, model=model, name=oldrecord.name)
-        
+
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
-        
+
         # Replace model in record object
         elif model is not None:
             oldrecord = record
             record = load_record(oldrecord.style, model=model, name=oldrecord.name)
-            
+
         # Find oldrecord matching record
         else:
             oldrecord = self.get_record(name=record.name, style=record.style)
-        
+
         # Delete oldrecord
         self.delete_record(record=oldrecord)
-        
+
         # Add new record
         self.add_record(record=record, build=build)
-        
+
         if verbose:
             print(f'{record} updated in {self.host}')
 
         return record
-    
-    def delete_record(self, record=None, name=None, style=None, verbose=False):
+
+    def delete_record(self, record=None, style=None, name=None, verbose=False):
         """
         Permanently deletes a record from the database. 
         
@@ -400,15 +400,15 @@ class MongoDatabase(Database):
         ValueError
             If style and/or name content given with record.
         """
-        
+
         # Create Record object if not given
         if record is None:
             record = self.get_record(name=name, style=style)
-        
+
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
-        
+
         # Verify that record exists
         else:
             record = self.get_record(name=record.name, style=record.style)
@@ -423,7 +423,7 @@ class MongoDatabase(Database):
         if verbose:
             print(f'{record} deleted from {self.host}')
 
-    def add_tar(self, record=None, name=None, style=None, tar=None, root_dir=None):
+    def add_tar(self, record=None, style=None, name=None, tar=None, root_dir=None):
         """
         Archives and stores a folder associated with a record.
         
@@ -463,61 +463,61 @@ class MongoDatabase(Database):
         # Verify that record exists
         else:
             record = self.get_record(name=record.name, style=record.style)
-        
+
         # Define mongofs
         mongofs = GridFS(self.mongodb, collection=record.style)
-        
+
         # Check if an archive already exists
         if mongofs.exists({"recordname": record.name}):
             raise ValueError('Record already has an archive')
-        
+
         if tar is None:
             if root_dir is None:
                 root_dir = Path.cwd()
-                
+
             # Make archive
             basename = Path(root_dir, record.name)
             filename = Path(root_dir, record.name + '.tar.gz')
             shutil.make_archive(basename, 'gztar', root_dir=root_dir,
                                 base_dir=record.name)
-        
+
             # Upload archive
             with open(filename, 'rb') as f:
                 tries = 0
                 while tries < 2:
-                    if True:
+                    tries += 1
+                    try:
                         mongofs.put(f, recordname=record.name)
                         break
-                    else:
-                        tries += 1
-                if tries == 2:
-                    raise ValueError('Failed to upload archive 2 times')
-        
+                    except Exception as err:
+                        if tries == 2:
+                            raise ValueError('Failed to upload archive 2 times') from err
+
             # Remove local archive copy
             filename.unlink()
-            
+
         elif root_dir is None:
             # Upload archive
             tries = 0
             while tries < 2:
-                if True:
+                tries += 1
+                try:
                     mongofs.put(tar, recordname=record.name)
                     break
-                else:
-                    tries += 1
-            if tries == 2:
-                raise ValueError('Failed to upload archive 2 times')
+                except Exception as err:
+                    if tries == 2:
+                        raise ValueError('Failed to upload archive 2 times') from err
         else:
             raise ValueError('tar and root_dir cannot both be given')
-        
-    def get_tar(self, record=None, name=None, style=None, raw=False):
+
+    def get_tar(self, record=None, style=None, name=None, raw=False):
         """
         Retrives the tar archive associated with a record in the database.
                 
         Parameters
         ----------
         record : Record, optional
-            The record to retrive the associated tar archive for.
+            The record to retrieve the associated tar archive for.
         name : str, optional
             .The name to use in uniquely identifying the record.
         style : str, optional
@@ -537,26 +537,26 @@ class MongoDatabase(Database):
         ValueError
             If style and/or name content given with record.
         """
-        
+
         # Create Record object if not given
         if record is None:
             record = self.get_record(name=name, style=style)
-        
+
         # Issue a TypeError for competing kwargs
         elif style is not None or name is not None:
             raise TypeError('kwargs style and name cannot be given with kwarg record')
-        
+
         # Verify that record exists
-        else:
-            record = self.get_record(name=record.name, style=record.style)
-        
+        #else:
+        #    record = self.get_record(name=record.name, style=record.style)
+
         # Define mongofs
         mongofs = GridFS(self.mongodb, collection=record.style)
-        
+
         # Build query
         query = {}
         query['recordname'] = record.name
-        
+
         # Get tar
         matches = list(mongofs.find(query))
         if len(matches) == 1:
@@ -566,13 +566,16 @@ class MongoDatabase(Database):
         else:
             raise ValueError('Multiple tars found for the record')
 
+        tarobj = tarfile.open(fileobj=tar)
+        record.tar = tarobj
+
         # Return content
         if raw is True:
             return tar.read()
         else:
-            return tarfile.open(fileobj=tar)
+            return tarobj
 
-    def delete_tar(self, record=None, name=None, style=None):
+    def delete_tar(self, record=None, style=None, name=None):
         """
         Deletes a tar file from the database.
         
@@ -592,26 +595,26 @@ class MongoDatabase(Database):
         ValueError
             If style and/or name content given with record.
         """
-        
+
         # Create Record object if not given
         if record is None:
             record = self.get_record(name=name, style=style)
-        
+
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
-        
+
         # Verify that record exists
         else:
             record = self.get_record(name=record.name, style=record.style)
-        
+
         # Define mongofs
         mongofs = GridFS(self.mongodb, collection=record.style)
-        
+
         # Build query
         query = {}
         query['recordname'] = record.name
-        
+
         # Get tar
         matches = list(mongofs.find(query))
         if len(matches) == 1:
@@ -620,11 +623,11 @@ class MongoDatabase(Database):
             raise ValueError('No tar found for the record')
         else:
             raise ValueError('Multiple tars found for the record')
-        
+
         # Delete tar
         mongofs.delete(tar._id)
-    
-    def update_tar(self, record=None, name=None, style=None, tar=None, root_dir=None):
+
+    def update_tar(self, record=None, style=None, name=None, tar=None, root_dir=None):
         """
         Replaces an existing tar archive for a record with a new one. 
         
@@ -647,9 +650,9 @@ class MongoDatabase(Database):
             set root_dir to the current working directory.)  tar cannot be given
             with root_dir.
         """
-        
+
         # Delete the existing tar archive stored in the database
         self.delete_tar(record=record, name=name, style=style)
-        
+
         # Add the new tar archive
         self.add_tar(record=record, name=name, style=style, tar=tar, root_dir=root_dir)

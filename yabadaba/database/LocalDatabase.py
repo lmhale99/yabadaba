@@ -17,7 +17,7 @@ from . import Database
 from .. import load_record, recordmanager
 
 class LocalDatabase(Database):
-    
+
     def __init__(self, host, format='json', indent=None):
         """
         Initializes a connection to a local database of JSON/XML records
@@ -40,7 +40,7 @@ class LocalDatabase(Database):
         host = Path(host)
         if not host.is_dir():
             host.mkdir(parents=True)
-        
+
         # Get absolute path to host
         host = host.resolve()
 
@@ -50,7 +50,7 @@ class LocalDatabase(Database):
         # Set default format and indent values
         self.__format = format
         self.__indent = indent
-    
+
     @property
     def style(self):
         """str: The database style"""
@@ -60,7 +60,7 @@ class LocalDatabase(Database):
     def format(self):
         """str: The format that records are saved as: 'json' or 'xml'"""
         return self.__format
-    
+
     @property
     def indent(self):
         """int or None: The record indentation setting to use when saving records."""
@@ -87,7 +87,7 @@ class LocalDatabase(Database):
         cachefile = Path(self.host, f'{style}.csv')
 
         if cachefile.is_file() and refresh is False:
-            
+
             # Load cache file
             cache = pd.read_csv(cachefile)
 
@@ -98,7 +98,7 @@ class LocalDatabase(Database):
                     return ast.literal_eval(series[key])
                 except:
                     return series[key]
-            
+
             def toint(column):
                 """Convert int columns as needed"""
                 try:
@@ -108,7 +108,7 @@ class LocalDatabase(Database):
                     return column
                 else:
                     return newcolumn
-                    
+
             # Interpret int, dict and list elements
             if len(cache) > 0:
                 cache = cache.apply(toint, axis=0)
@@ -119,7 +119,6 @@ class LocalDatabase(Database):
             # Initialize new cache
             cache = pd.DataFrame({'name':[]})
 
-        
         if addnew is True:
 
             # Compare names in the cache to file names in the directory
@@ -138,9 +137,9 @@ class LocalDatabase(Database):
                 newrecords = pd.DataFrame(newrecords)
                 cache = cache.append(newrecords, sort=False).sort_values('name')
                 refresh = True
-            
+
             # Delete missing entries
-            if len(deletednames) > 0:                
+            if len(deletednames) > 0:
                 cache = cache[~cache.name.isin(deletednames)]
                 refresh = True
 
@@ -150,7 +149,7 @@ class LocalDatabase(Database):
 
         return cache
 
-    def get_records(self, style=None, refresh_cache=False, return_df=False, **kwargs):
+    def get_records(self, style=None, return_df=False, refresh_cache=False, **kwargs):
         """
         Produces a list of all matching records in the database.
         
@@ -179,24 +178,23 @@ class LocalDatabase(Database):
             The corresponding metadata values for the records.  Only returned
             if return_df is True.
         """
-        
         # Get df
         df = self.get_records_df(style, refresh_cache=refresh_cache, **kwargs)
-        
+
         # Load only the matching records
         records = []
         if len(df) > 0:
             for name in df.name:
                 fname = Path(self.host, style, f'{name}.{self.format}')
-                records.append(recordmanager.init(style, model=fname))
-        
+                records.append(load_record(style, model=fname, database=self))
+
         records = np.array(records)
-        
+
         if return_df:
             return records, df
         else:
             return records
-    
+
     def get_records_df(self, style=None, refresh_cache=False, **kwargs):
         """
         Produces a table of metadata for matching records in the database.
@@ -220,20 +218,20 @@ class LocalDatabase(Database):
         records_df : pandas.DataFrame
             The corresponding metadata values for the records.
         """
-        
+
         # Set default search parameters
         if style is None:
             style = self.select_record_style()
-        
+
         if 'name' in kwargs and kwargs['name'] is not None:
             # Load named records
             cache = []
             for name in aslist(kwargs['name']):
                 fname = Path(self.host, style, f'{name}.{self.format}')
                 if fname.exists():
-                    record = recordmanager.init(style, model=fname)
+                    record = load_record(style, model=fname)
                     cache.append(record.metadata())
-            
+
             # Build cache DataFrame
             if len(cache) == 0:
                 cache = pd.DataFrame({'name':[]})
@@ -243,11 +241,11 @@ class LocalDatabase(Database):
         else:
             # Load cache file
             cache = self.cache(style, refresh=refresh_cache)
-        
+
         # Filter based on the record's pandasfilter method
         mask = load_record(style).pandasfilter(cache, **kwargs)
         df = cache[mask].reset_index(drop=True)
-        
+
         return df
 
     def get_record(self, style=None, refresh_cache=False, **kwargs):
@@ -278,7 +276,7 @@ class LocalDatabase(Database):
         ValueError
             If multiple or no matching records found.
         """
-        
+
         if style is None:
             styles = recordmanager.loaded_style_names
         else:
@@ -288,8 +286,8 @@ class LocalDatabase(Database):
         records = []
         for style in styles:
             records.append(self.get_records(style, refresh_cache=refresh_cache, **kwargs))
-        records = np.hstack(records)        
-        
+        records = np.hstack(records)
+
         # Verify that there is only one matching record
         if len(records) == 1:
             return records[0]
@@ -337,11 +335,11 @@ class LocalDatabase(Database):
             If style, name and/or model given with record, or a matching record
             already exists.
         """
-        
+
         # Create Record object if not given
         if record is None:
             record = load_record(style, model=model, name=name)
-        
+
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None or model is not None:
             raise ValueError('kwargs style, name, and model cannot be given with kwarg record')
@@ -351,11 +349,11 @@ class LocalDatabase(Database):
         fname = Path(style_dir, f'{record.name}.{self.format}')
         if fname.is_file():
             raise ValueError(f'Record {record.name} already exists')
-        
+
         # Make record style directory if needed
         if not style_dir.is_dir():
             style_dir.mkdir()
-        
+
         # Retrieve/build model contents
         try:
             assert build is False
@@ -369,7 +367,7 @@ class LocalDatabase(Database):
                 model.json(fp=f, indent=self.indent, ensure_ascii=False)
             elif self.format == 'xml':
                 model.xml(fp=f, indent=self.indent)
-        
+
         if verbose:
             print(f'{record} added to {self.host}')
 
@@ -415,28 +413,28 @@ class LocalDatabase(Database):
         ValueError
             If style and/or name content given with record.
         """
-        
+
         # Create Record object if not given
         if record is None:
             if model is None:
                 raise TypeError('no new model given')
-            
+
             record = load_record(style, model=model, name=name)
-        
+
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
-        
+
         # Replace content in record object
         elif model is not None:
             record = load_record(record.style, model=model, name=record.name)
-            
+
         # Check if record already exists
         style_dir = Path(self.host, record.style)
         fname = Path(style_dir, f'{record.name}.{self.format}')
         if not fname.is_file():
             raise ValueError(f'No existing record {record.name} found')
-        
+
         # Retrieve/build model contents
         try:
             assert build is False
@@ -450,13 +448,13 @@ class LocalDatabase(Database):
                 model.json(fp=f, indent=self.indent, ensure_ascii=False)
             elif self.format == 'xml':
                 model.xml(fp=f, indent=self.indent)
-        
+
         if verbose:
             print(f'{record} updated in {self.host}')
 
         return record
-    
-    def delete_record(self, record=None, name=None, style=None, verbose=False):
+
+    def delete_record(self, record=None, style=None, name=None, verbose=False):
         """
         Permanently deletes a record from the database.
         
@@ -478,15 +476,15 @@ class LocalDatabase(Database):
         ValueError
             If style and/or name given with record.
         """
-        
+
         # Create Record object if not given
         if record is None:
             record = self.get_record(name=name, style=style)
-        
+
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
-        
+
          # Delete record file
         fname = Path(self.host, record.style, f'{record.name}.{self.format}')
         if fname.is_file():
@@ -497,7 +495,7 @@ class LocalDatabase(Database):
         if verbose:
             print(f'{record} deleted from {self.host}')
 
-    def add_tar(self, record=None, name=None, style=None, tar=None,
+    def add_tar(self, record=None, style=None, name=None, tar=None,
                 root_dir=None):
         """
         Archives and stores a folder associated with a record.
@@ -527,29 +525,29 @@ class LocalDatabase(Database):
             If style and/or name content given with record or the record already
             has a folder or a tar archive.
         """
-        
+
         # Create Record object if not given
         if record is None:
             record = self.get_record(name=name, style=style)
-        
+
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
-        
+
         # Verify that record exists
         else:
             record = self.get_record(name=record.name, style=record.style)
-        
+
         # Build path to record
         dir_path = Path(self.host, record.style, record.name)
         tar_path = Path(self.host, record.style, f'{record.name}.tar.gz')
-        
+
         # Check if an archive or folder already exists
         if tar_path.exists():
             raise ValueError('Record already has an archive')
         elif dir_path.exists():
             raise ValueError('Record already has a folder')
-        
+
         # Make archive
         if tar is None:
             if root_dir is None:
@@ -559,21 +557,21 @@ class LocalDatabase(Database):
             tar = tarfile.open(tar_path, 'w:gz')
             tar.add(target, target.name)
             tar.close()
-            
+
         elif root_dir is None:
             with open(tar_path, 'wb') as f:
                 f.write(tar)
         else:
             raise ValueError('tar and root_dir cannot both be given')
-    
-    def get_tar(self, record=None, name=None, style=None, raw=False):
+
+    def get_tar(self, record=None, style=None, name=None, raw=False):
         """
         Retrives the tar archive associated with a record in the database.
         
         Parameters
         ----------
         record : Record, optional
-            The record to retrive the associated tar archive for.
+            The record to retrieve the associated tar archive for.
         name : str, optional
             The name to use in uniquely identifying the record.
         style : str, optional
@@ -593,30 +591,33 @@ class LocalDatabase(Database):
         ValueError
             If style and/or name content given with record.
         """
-        
+
         # Create Record object if not given
         if record is None:
             record = self.get_record(name=name, style=style)
-        
+
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
-        
+
         # Verify that record exists
         #else:
         #    record = self.get_record(name=record.name, style=record.style)
-        
+
         # Build path to record
         tar_path = Path(self.host, record.style, record.name+'.tar.gz')
-        
+
+        tar = tarfile.open(tar_path)
+        record.tar = tar
+
         # Return content
         if raw is True:
             with open(tar_path, 'rb') as f:
                 return f.read()
         else:
-            return tarfile.open(tar_path)
+            return tar
 
-    def delete_tar(self, record=None, name=None, style=None):
+    def delete_tar(self, record=None, style=None, name=None):
         """
         Deletes a tar file from the database.
         
@@ -636,27 +637,27 @@ class LocalDatabase(Database):
         ValueError
             If style and/or name content given with record.
         """
-        
+
         # Create Record object if not given
         if record is None:
             record = self.get_record(name=name, style=style)
-        
+
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
-        
+
         # Verify that record exists
         #else:
         #    record = self.get_record(name=record.name, style=record.style)
-        
+
         # Build path to tar file
         tar_path = Path(self.host, record.style, record.name+'.tar.gz')
-        
+
         # Delete record if it exists
         if tar_path.is_file():
             tar_path.unlink()
 
-    def update_tar(self, record=None, name=None, style=None, tar=None,
+    def update_tar(self, record=None, style=None, name=None, tar=None,
                    root_dir=None):
         """
         Replaces an existing tar archive for a record with a new one.
@@ -680,10 +681,10 @@ class LocalDatabase(Database):
             set root_dir to the current working directory.)  tar cannot be given
             with root_dir.
         """
-        
+
         # Delete the existing tar archive stored in the database
         self.delete_tar(record=record, name=name)
-        
+
         # Add the new tar archive
         self.add_tar(record=record, name=name, style=style, tar=tar,
                      root_dir=root_dir)
@@ -718,46 +719,46 @@ class LocalDatabase(Database):
             If style and/or name content given with record or the record already
             has a folder or a tar archive.
         """
-        
+
         # Create Record object if not given
         if record is None:
             record = self.get_record(name=name, style=style)
-        
+
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
-        
+
         # Verify that record exists
         else:
             record = self.get_record(name=record.name, style=record.style)
-        
+
         # Build database paths
         dir_path = Path(self.host, record.style, record.name)
         tar_path = Path(self.host, record.style, f'{record.name}.tar.gz')
-        
+
         # Check if an archive or folder already exists
         if tar_path.exists():
             raise ValueError('Record already has an archive')
         elif dir_path.exists():
             raise ValueError('Record already has a folder')
-        
+
         # Copy folder
         if filenames is None:
             if root_dir is None:
                 root_dir = '.'
             source = Path(root_dir, record.name)
             shutil.copytree(source, dir_path)
-        
+
         # Copy files
         elif root_dir is None:
             dir_path.mkdir(parents=True)
             for filename in iaslist(filenames):
                 shutil.copy2(filename, Path(dir_path, Path(filename).name))
-                
+
         else:
             raise ValueError('filenames and root_dir cannot both be given')
 
-    def get_folder(self, record=None, name=None, style=None):
+    def get_folder(self, record=None, style=None, name=None):
         """
         Retrives the location of the folder associated with a record in the
         database. 
@@ -765,7 +766,7 @@ class LocalDatabase(Database):
         Parameters
         ----------
         record : Record, optional
-            The record to retrive the associated folder location for.
+            The record to retrieve the associated folder location for.
         name : str, optional
             The name to use in uniquely identifying the record.
         style : str, optional
@@ -783,22 +784,22 @@ class LocalDatabase(Database):
         NotADirectoryError
             If the record's folder doesn't exist.
         """
-        
+
         # Create Record object if not given
         if record is None:
             record = self.get_record(name=name, style=style)
-        
+
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
-        
+
         # Verify that record exists
         else:
             record = self.get_record(name=record.name, style=record.style)
-        
+
         # Build path to folder
         dir_path = Path(self.host, record.style, record.name)
-        
+
         # Return path
         if dir_path.exists():
             return dir_path
@@ -825,27 +826,27 @@ class LocalDatabase(Database):
         ValueError
             If style and/or name content given with record.
         """
-        
+
         # Create Record object if not given
         if record is None:
             record = self.get_record(name=name, style=style)
-        
+
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
-        
+
         # Verify that record exists
         else:
             record = self.get_record(name=record.name, style=record.style)
-        
+
         # Build path to tar file
         dir_path = Path(self.host, record.style, record.name)
-        
+
         # Delete record if it exists
         if dir_path.exists():
             shutil.rmtree(dir_path)
 
-    def update_folder(self, record=None, name=None, style=None, filenames=None,
+    def update_folder(self, record=None, style=None, name=None, filenames=None,
                       root_dir=None, clear=True):
         """
         Updates an existing folder for a record.
@@ -880,7 +881,7 @@ class LocalDatabase(Database):
         # Create Record object if not given
         if record is None:
             record = self.get_record(name=name, style=style)
-        
+
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
@@ -888,22 +889,22 @@ class LocalDatabase(Database):
         # Verify that record exists
         else:
             record = self.get_record(name=record.name, style=record.style)
-        
+
         # Build database paths
         dir_path = Path(self.host, record.style, record.name)
-        
+
         # Delete existing folder
         if clear is True:
             if dir_path.exists():
                 shutil.rmtree(dir_path)
-        
+
         # Copy folder
         if filenames is None:
             if root_dir is None:
                 root_dir = '.'
             source = Path(root_dir, record.name)
             shutil.copytree(source, dir_path)
-        
+
         # Copy files
         elif root_dir is None:
             dir_path.mkdir(parents=True)

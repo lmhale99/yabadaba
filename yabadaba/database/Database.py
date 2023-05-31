@@ -4,9 +4,6 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-# https://github.com/usnistgov/DataModelDict
-from DataModelDict import DataModelDict as DM
-
 # iprPy imports
 from ..record import recordmanager, load_record
 from ..tools import screen_input
@@ -16,7 +13,7 @@ class Database():
     Class for handling different database styles in the same fashion.  This
     base class defines the common methods and attributes.
     """
-    
+
     def __init__(self, host):
         """
         Initializes a connection to a database.
@@ -29,10 +26,10 @@ class Database():
         # Check that object is a subclass
         if self.__module__ == __name__:
             raise TypeError("Don't use Database itself, only use derived classes")
-        
+
         # Set property values
         self.__host = host
-    
+
     def __str__(self):
         """
         Returns
@@ -41,17 +38,17 @@ class Database():
             The string representation of the database.
         """
         return f'database style {self.style} at {self.host}'
-    
+
     @property
     def style(self):
         """str: The database style"""
         raise NotImplementedError('Not defined for base class')
-    
+
     @property
     def host(self):
         """str: The database's host."""
         return self.__host
-    
+
     def get_records(self, style=None, return_df=False, **kwargs):
         """
         Produces a list of all matching records in the database.
@@ -81,7 +78,7 @@ class Database():
             If get_records is not defined for database style.
         """
         raise AttributeError('get_records not defined for Database style')
-    
+
     def get_record(self, style=None, **kwargs):
         """
         Returns a single matching record from the database.  Issues an error
@@ -106,7 +103,7 @@ class Database():
             If get_record is not defined for database style.
         """
         raise AttributeError('get_record not defined for Database style')
-    
+
     def get_records_df(self, style=None, **kwargs):
         """
         Produces a pandas.DataFrame of all matching records in the database.
@@ -130,7 +127,7 @@ class Database():
             If get_record is not defined for database style.
         """
         raise AttributeError('get_records_df not defined for Database style')
-    
+
     def retrieve_record(self, style=None, dest=None, format='json', indent=4,
                         verbose=False, **kwargs):
         """
@@ -172,7 +169,7 @@ class Database():
                 record.model.json(fp=f, indent=indent, ensure_ascii=False)
             if verbose:
                 print(f'{fname} saved')
-        
+
         # Save as xml
         elif format == 'xml':
             fname = Path(dest, f'{record.name}.xml')
@@ -223,7 +220,7 @@ class Database():
             If add_record is not defined for database style.
         """
         raise AttributeError('add_record not defined for Database style')
-    
+
     def update_record(self, record=None, style=None, name=None, model=None,
                       build=False, verbose=False):
         """
@@ -263,7 +260,7 @@ class Database():
             If update_record is not defined for database style.
         """
         raise AttributeError('update_record not defined for Database style')
-    
+
     def delete_record(self, record=None, style=None, name=None):
         """
         Permanently deletes a record from the database.
@@ -285,8 +282,6 @@ class Database():
             If delete_record is not defined for database style.
         """
         raise AttributeError('delete_record not defined for Database style')
-    
-    
 
     def get_tar(self, record=None, style=None, name=None, raw=False):
         """
@@ -316,7 +311,7 @@ class Database():
             If get_tar is not defined for database style.
         """
         raise AttributeError('get_tar not defined for Database style')
-    
+
     def add_tar(self, record=None, style=None, name=None, tar=None, root_dir=None):
         """
         Archives and stores a folder associated with a record.
@@ -347,7 +342,7 @@ class Database():
             has an archive.
         """
         raise AttributeError('add_tar not defined for Database style')
-    
+
     def update_tar(self, record=None, style=None, name=None, tar=None, root_dir=None):
         """
         Replaces an existing tar archive for a record with a new one.
@@ -377,7 +372,7 @@ class Database():
             If update_tar is not defined for database style.
         """
         raise AttributeError('update_tar not defined for Database style')
-    
+
     def delete_tar(self, record=None, style=None, name=None):
         """
         Deletes a tar file from the database.
@@ -386,8 +381,8 @@ class Database():
         ----------
         record : Record, optional
             The record associated with the tar archive to delete.  If not
-            given, then name and/or style necessary to uniquely identify
-            the record are needed.
+            given, then name and/or style are necessary to uniquely identify
+            the record.
         style : str, optional
             The style to use in uniquely identifying the record.
         name : str, optional
@@ -399,7 +394,7 @@ class Database():
             If delete_tar is not defined for database style.
         """
         raise AttributeError('delete_tar not defined for Database style')
-    
+
     def copy_records(self, dest, record_style=None, records=None, includetar=True, overwrite=False):
         """
         Copies records from the current database to another database.
@@ -426,20 +421,20 @@ class Database():
         if record_style is None and records is None:
             # Prompt for record_style
             record_style = self.select_record_style()
-        
+
         if record_style is not None:
             if records is not None:
                 raise ValueError('record_style and records cannot both be given')
-            
+
             # Retrieve records from self
-            records = self.get_records(style=record_style) 
-        
+            records = self.get_records(style=record_style)
+
         elif records is None:
             # Set empty list if record_style is still None and no records given
             records = []
-        
+
         print(len(records), 'records to try to copy')
-        
+
         record_count = 0
         tar_count = 0
         # Copy records
@@ -453,14 +448,14 @@ class Database():
                 if overwrite:
                     dest.update_record(record=record)
                     record_count += 1
-            
+
             # Copy archives
             if includetar:
                 try:
                     # Get tar if it exists
                     tar = self.get_tar(record=record, raw=True) 
                 except:
-                    
+
                     # Get folder if it exists
                     try:
                         root_dir = self.get_folder(record=record).parent
@@ -476,7 +471,7 @@ class Database():
                             if overwrite:
                                 dest.update_tar(record=record, root_dir=root_dir)
                                 tar_count += 1
-                    
+
                 else:
                     try:
                         # Copy tar over
@@ -487,11 +482,11 @@ class Database():
                         if overwrite:
                             dest.update_tar(record=record, tar=tar)
                             tar_count += 1
-        
+
         print(record_count, 'records added/updated')
         if includetar:
             print(tar_count, 'tars added/updated')
-    
+
     def destroy_records(self, record_style=None, records=None):
         """
         Permanently deletes multiple records and their associated tars all at
@@ -515,10 +510,10 @@ class Database():
         if record_style is not None:
             if records is not None:
                 raise ValueError('record_style and records cannot both be given')
-            
+
             # Retrieve records with errors from self
             records = self.get_records(style=record_style) 
-        
+
         elif records is None:
             # Set empty list if record_style is still None and no records given
             records = []
@@ -546,14 +541,13 @@ class Database():
                         cache = self.cache(record_style, refresh=True)
                 print(count, 'records successfully deleted')
 
-    
     def select_record_style(self):
         """
         Console prompt for selecting a record_style
         """
         # Build list of calculation records
         styles = recordmanager.loaded_style_names
-        
+
         # Ask for selection
         print('Select record_style:')
         for i, style in enumerate(styles):
@@ -566,16 +560,15 @@ class Database():
         else:
             record_style = styles[choice-1]
         print()
-        
+
         return record_style
 
     def record_querynames(self,
                           style: str) -> list:
         """Return the list of query parameter names for a given record style"""
         return load_record(style).querynames
-    
+
     def record_querydoc(self,
                         style: str) -> str:
         """Return the description of query parameters for a given record style"""
         return load_record(style).querydoc
-

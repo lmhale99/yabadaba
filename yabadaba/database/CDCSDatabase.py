@@ -21,7 +21,7 @@ from . import Database
 from .. import load_record, recordmanager
 
 class CDCSDatabase(Database):
-    
+
     def __init__(self,
                  host: str,
                  username: Optional[str] = None,
@@ -64,22 +64,21 @@ class CDCSDatabase(Database):
             default to "2.15.0".  For CDCS versions 3.X.X, this is ignored as
             version info is obtained directly from the database.
         """
-        
         # Fetch password from file if needed
         try:
-            with open(password) as f:
+            with open(password, encoding='UTF-8') as f:
                 password = f.read().strip()
-        except:
+        except Exception:
             pass
-        
+
         # Pass parameters to cdcs object
         self.__cdcs = CDCS(host, username=username, password=password, auth=auth,
                            cert=cert, certification=certification, verify=verify,
                            cdcsversion=cdcsversion)
-        
+
         # Pass host to Database initializer
         Database.__init__(self, host)
-    
+
     @property
     def style(self):
         """str: The database style"""
@@ -90,7 +89,7 @@ class CDCSDatabase(Database):
         """cdcs.CDCS : The underlying database API object."""
         return self.__cdcs
 
-    def get_records(self, style=None, name=None, return_df=False,
+    def get_records(self, style=None, return_df=False, name=None,
                     query=None, keyword=None, **kwargs):
         """
         Produces a list of all matching records in the database.
@@ -140,8 +139,8 @@ class CDCSDatabase(Database):
 
         def build_records(series):
             return load_record(series.template_title, model=series.xml_content,
-                               name=series.title)
-        
+                               name=series.title, database=self)
+
         # Build records by querying for each record name (or None)
         records = []
         for n in iaslist(name):
@@ -167,7 +166,7 @@ class CDCSDatabase(Database):
             return records, df.reset_index(drop=True)
         else:
             return records
-    
+
     def get_records_df(self, style=None, name=None, query=None, keyword=None, **kwargs):
         """
         Produces a list of all matching records in the database.
@@ -195,7 +194,7 @@ class CDCSDatabase(Database):
             The corresponding metadata values for the records.
         """
         return self.get_records(style, name=name, query=query, keyword=keyword, return_df=True, **kwargs)[1]
-    
+
     def get_record(self, style=None, name=None, query=None, keyword=None, **kwargs):
         """
         Returns a single matching record from the database.
@@ -247,7 +246,7 @@ class CDCSDatabase(Database):
             raise ValueError('Multiple matching records found')
     
     def add_record(self, record=None, style=None, name=None, model=None,
-                   build=False, workspace=None, verbose=False):
+                   build=False, verbose=False, workspace=None):
         """
         Adds a new record to the database.
         
@@ -289,20 +288,20 @@ class CDCSDatabase(Database):
             If style, name and/or model given with record, or a matching record
             already exists.
         """
-        
+
         # Create Record object if not given
         if record is None:
             record = load_record(style, model=model, name=name)
-        
+
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None or model is not None:
             raise ValueError('kwargs style, name, and model cannot be given with kwarg record')
-            
+
         # Retrieve/build model contents
         try:
             assert build is False
             content = record.model.xml()
-        except:
+        except Exception:
             content = record.build_model().xml()
 
         # Upload to database
@@ -315,9 +314,9 @@ class CDCSDatabase(Database):
             self.assign_records(record, workspace, verbose=verbose)
 
         return record
-    
+
     def update_record(self, record=None, style=None, name=None, model=None,
-                      build=False, workspace=None, verbose=False):
+                      build=False, verbose=False, workspace=None):
         """
         Replaces an existing record with a new record of matching name and 
         style, but new content.
@@ -360,34 +359,34 @@ class CDCSDatabase(Database):
         ValueError
             If style, model, and/or name given with record.
         """
-        
+
         # Create Record object if not given
         if record is None:
             if model is None:
                 raise TypeError('no new model given')
             oldrecord = self.get_record(name=name, style=style)
             record = load_record(oldrecord.style, model=model, name=oldrecord.name)
-        
+
         # Use given record object
         else:
             if style is not None or name is not None:
                 raise ValueError('kwargs style and name cannot be given with kwarg record')
-            
+
             # Replace model in record object
             if model is not None:
                 record = load_record(record.style, model=model, name=record.name)
-        
+
         # Retrieve/build model contents
         try:
             assert build is False
             content = record.model.xml()
-        except:
+        except Exception:
             content = record.build_model().xml()
 
         # Upload to database
         self.cdcs.update_record(template=record.style, content=content,
                                 title=record.name)
-        
+
         if verbose:
             print(f'{record} updated in {self.host}')
 
@@ -395,8 +394,8 @@ class CDCSDatabase(Database):
             self.assign_records(record, workspace, verbose=verbose)
 
         return record
-    
-    def delete_record(self, record=None, name=None, style=None, verbose=False):
+
+    def delete_record(self, record=None, style=None, name=None, verbose=False):
         """
         Permanently deletes a record from the database.  Will issue an error 
         if exactly one matching record is not found in the database.
@@ -419,14 +418,13 @@ class CDCSDatabase(Database):
         ValueError
             If style and/or name content given with record.
         """
-        
         # Extract values from Record object if given
         if record is not None:
             if style is not None or name is not None:
                 raise ValueError('kwargs style and name cannot be given with kwarg record')
             name = record.name
             style = record.style
-         
+
         # Delete record
         self.cdcs.delete_record(template=style, title=name)
 
@@ -447,14 +445,14 @@ class CDCSDatabase(Database):
             Setting this to True will print extra status messages.  Default
             value is False.
         """
-        ids = []
+        #ids = []
         for record in aslist(records):
             self.cdcs.assign_records(workspace, template=record.style,
                                      title=record.name)
             if verbose:
                 print(f'{record} assigned to workspace {workspace}')
 
-    def add_tar(self, record=None, name=None, style=None, tar=None, root_dir=None):
+    def add_tar(self, record=None, style=None, name=None, tar=None, root_dir=None):
         """
         Archives and stores a folder associated with a record.
         
@@ -483,11 +481,11 @@ class CDCSDatabase(Database):
             If style and/or name content given with record or the record already
             has an archive.
         """
-        
+
         # Get Record object if not given
         if record is None:
             record = self.get_record(name=name, style=style)
-        
+
         else:
             # Issue a ValueError for competing kwargs
             if style is not None or name is not None:
@@ -495,37 +493,37 @@ class CDCSDatabase(Database):
 
             # Verify that record exists
             record = self.get_record(name=record.name, style=record.style)
-        
+
         # Check if an archive already exists
         blobs = self.cdcs.get_blobs(filename=record.name)
         if len(blobs) > 0:
             raise ValueError('Record already has an archive')
-        
+
         # Create directory archive and upload
         if tar is None: 
             if root_dir is None:
                 root_dir = Path.cwd()
-                
+
             # Make archive
             basename = Path(root_dir, record.name)
             filename = Path(root_dir, record.name + '.tar.gz')
             shutil.make_archive(basename, 'gztar', root_dir=root_dir,
                                 base_dir=record.name)
-            
+
             # Upload archive
             tries = 0
             while tries < 2:
-                if True:
+                tries += 1
+                try:
                     url = self.cdcs.upload_blob(filename.as_posix())
                     break
-                else:
-                    tries += 1
-            if tries == 2:
-                raise ValueError('Failed to upload archive 2 times')
-            
+                except Exception as err:
+                    if tries == 2:
+                        raise ValueError('Failed to upload archive 2 times') from err
+
             # Remove local archive copy
             filename.unlink()
-        
+
         # Upload pre-existing tar object
         elif root_dir is None:
             filename = Path(record.name + '.tar.gz')
@@ -533,18 +531,18 @@ class CDCSDatabase(Database):
             # Upload archive
             tries = 0
             while tries < 2:
-                if True:
+                tries += 1
+                try:
                     url = self.cdcs.upload_blob(filename=filename, blobbytes=BytesIO(tar))
                     break
-                else:
-                    tries += 1
-            if tries == 2:
-                raise ValueError('Failed to upload archive 2 times')
-        
+                except Exception as err:
+                    if tries == 2:
+                        raise ValueError('Failed to upload archive 2 times') from err
+
         else:
             raise ValueError('tar and root_dir cannot both be given')
 
-    def get_tar(self, record=None, name=None, style=None, raw=False):
+    def get_tar(self, record=None, style=None, name=None, raw=False):
         """
         Retrives the tar archive associated with a record in the database.
         
@@ -575,27 +573,31 @@ class CDCSDatabase(Database):
         # Create Record object if not given
         if record is None:
             record = self.get_record(name=name, style=style)
-        
+
         # Issue a TypeError for competing kwargs
         elif style is not None or name is not None:
             raise TypeError('kwargs style and name cannot be given with kwarg record')
-        
+
         # Verify that record exists
-        else:
-            record = self.get_record(name=record.name, style=record.style)
-        
+        #else:
+        #    record = self.get_record(name=record.name, style=record.style)
+
         filename = Path(record.name + '.tar.gz')
 
         # Download tar file
         tardata = self.cdcs.get_blob_contents(filename=filename)
-        
+
+        tar = tarfile.open(fileobj = BytesIO(tardata))
+
+        record.tar = tar
+
         # Return contents
         if raw is True:
             return tardata
         else:
-            return tarfile.open(fileobj = BytesIO(tardata))
-    
-    def delete_tar(self, record=None, name=None, style=None):
+            return tar
+
+    def delete_tar(self, record=None, style=None, name=None):
         """
         Deletes a tar file from the database.
         
@@ -610,24 +612,24 @@ class CDCSDatabase(Database):
         style : str, optional
             The style to use in uniquely identifying the record.
         """
-        
+
         # Create Record object if not given
         if record is None:
             record = self.get_record(name=name, style=style)
-        
+
         # Issue a TypeError for competing kwargs
         elif style is not None or name is not None:
             raise TypeError('kwargs style and name cannot be given with kwarg record')
-        
+
         # Verify that record exists
         else:
             record = self.get_record(name=record.name, style=record.style)
-        
+
         filename = Path(record.name + '.tar.gz')
 
         self.cdcs.delete_blob(filename=filename)
 
-    def update_tar(self, record=None, name=None, style=None, tar=None, root_dir=None):
+    def update_tar(self, record=None, style=None, name=None, tar=None, root_dir=None):
         """
         Archives and stores a folder associated with a record.
         
@@ -656,6 +658,6 @@ class CDCSDatabase(Database):
             If style and/or name content given with record or the record already
             has an archive.
         """
-        
+
         self.delete_tar(record=record, name=name, style=style)
         self.add_tar(record=record, name=name, style=style, tar=tar, root_dir=root_dir)
