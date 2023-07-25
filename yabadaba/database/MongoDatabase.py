@@ -48,9 +48,9 @@ class MongoDatabase(Database):
         self.__mongodb = MongoClient(host=host, port=port, document_class=DM, **kwargs)[database]
 
         # Define class host using client's host, port and database name
-        host = self.mongodb.client.address[0]
-        port =self.mongodb.client.address[1]
-        database = self.mongodb.name
+        #host = self.mongodb.client.address[0]
+        #port = self.mongodb.client.address[1]
+        #database = self.mongodb.name
         host = f'{host}:{port}.{database}'
 
         # Pass host to Database initializer
