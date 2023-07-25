@@ -138,8 +138,13 @@ class ModuleManager():
         ----------
         style : str
             The style name.
-        
+        *args : any
+            Any additional position-based arguments for the subclass being
+            created.  RECOMMENDED TO USE KWARGS OVER ARGS!!!
+        **kwargs : any
+            Any additional keyword arguments for the subclass being created.
         Returns
+        -------
         Object
             The initialized object.
         """

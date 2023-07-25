@@ -136,6 +136,7 @@ class LocalDatabase(Database):
                     newrecords.append(record.metadata())
                 newrecords = pd.DataFrame(newrecords)
                 cache = cache.append(newrecords, sort=False).sort_values('name')
+                #cache = pd.concat([cache, newrecords], sort=False).sort_values('name')
                 refresh = True
 
             # Delete missing entries
