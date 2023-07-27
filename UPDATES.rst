@@ -33,3 +33,29 @@ Updates
   within a tolerance.
 - Methods added to both record and database objects to view query docs.
 
+0.1.3
+-----
+
+- This version fixes a critical bug associated with function parameter order
+  with calls to load_record.
+- tqdm progress bars now added to certain methods.
+- Starting to add more utility methods to the Database classes to help with
+  large numbers of records. Unfortunately, this is also resulting in some
+  divergence as these useful methods are not implemented in all database styles
+  yet.
+
+0.1.2
+-----
+
+- Minor updates, plus some typing hints added to the code.
+- Tests have been added for some parts but not all.
+
+0.1.1
+-----
+
+- Bug fix
+
+0.1.0
+-----
+
+- Initial release. Code branched off from the potentials package and Query objects created.
