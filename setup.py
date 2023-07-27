@@ -1,6 +1,7 @@
 from setuptools import setup, find_packages
 
 def getreadme():
+    """Fetches long description from the README file"""
     with open('README.rst', encoding='utf-8') as readme_file:
         return readme_file.read()
 
@@ -17,7 +18,6 @@ setup(name = 'yabadaba',
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
         'Natural Language :: English',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
@@ -28,7 +28,7 @@ setup(name = 'yabadaba',
         'database', 
         'mongodb', 
         'CDCS',
-      ], 
+      ],
       url = 'https://github.com/usnistgov/yabadaba',
       author = 'Lucas Hale',
       author_email = 'lucas.hale@nist.gov',
