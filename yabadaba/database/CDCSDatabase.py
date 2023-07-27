@@ -145,7 +145,8 @@ class CDCSDatabase(Database):
         records = []
         for n in iaslist(name):
             data = self.cdcs.query(title=n, template=style, mongoquery=query, keyword=keyword)
-            records.extend(data.apply(build_records, axis=1))
+            if len(data) > 0:
+                records.extend(data.apply(build_records, axis=1))
         records = np.array(records)
 
         # Build df
