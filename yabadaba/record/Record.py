@@ -7,7 +7,7 @@ import io
 from tarfile import TarFile
 
 # https://ipython.org/
-from IPython.core.display import display, HTML
+from IPython.display import display, HTML
 
 # https://lxml.de/
 import lxml.etree as ET
