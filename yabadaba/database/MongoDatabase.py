@@ -566,13 +566,12 @@ class MongoDatabase(Database):
         else:
             raise ValueError('Multiple tars found for the record')
 
-        tarobj = tarfile.open(fileobj=tar)
-        record.tar = tarobj
-
         # Return content
         if raw is True:
             return tar.read()
         else:
+            tarobj = tarfile.open(fileobj=tar)
+            record.tar = tarobj
             return tarobj
 
     def delete_tar(self, record=None, style=None, name=None):

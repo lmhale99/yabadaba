@@ -608,14 +608,13 @@ class LocalDatabase(Database):
         # Build path to record
         tar_path = Path(self.host, record.style, record.name+'.tar.gz')
 
-        tar = tarfile.open(tar_path)
-        record.tar = tar
-
         # Return content
         if raw is True:
             with open(tar_path, 'rb') as f:
                 return f.read()
         else:
+            tar = tarfile.open(tar_path)
+            record.tar = tar
             return tar
 
     def delete_tar(self, record=None, style=None, name=None):

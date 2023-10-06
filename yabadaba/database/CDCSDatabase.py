@@ -588,14 +588,12 @@ class CDCSDatabase(Database):
         # Download tar file
         tardata = self.cdcs.get_blob_contents(filename=filename)
 
-        tar = tarfile.open(fileobj = BytesIO(tardata))
-
-        record.tar = tar
-
         # Return contents
         if raw is True:
             return tardata
         else:
+            tar = tarfile.open(fileobj = BytesIO(tardata))
+            record.tar = tar
             return tar
 
     def delete_tar(self, record=None, style=None, name=None):
