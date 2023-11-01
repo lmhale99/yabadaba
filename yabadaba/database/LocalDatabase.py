@@ -135,8 +135,7 @@ class LocalDatabase(Database):
                     record = load_record(style, model=fname, name=name)
                     newrecords.append(record.metadata())
                 newrecords = pd.DataFrame(newrecords)
-                cache = cache.append(newrecords, sort=False).sort_values('name')
-                #cache = pd.concat([cache, newrecords], sort=False).sort_values('name')
+                cache = pd.concat([cache, newrecords], sort=False).sort_values('name')
                 refresh = True
 
             # Delete missing entries
@@ -296,6 +295,40 @@ class LocalDatabase(Database):
             raise ValueError('No matching records found')
         else:
             raise ValueError('Multiple matching records found')
+
+    def count_records(self, style=None, **kwargs):
+        """
+        Retrieves a count of matching records from the database.  Fast if you
+        only want the total number of records of a given style. 
+        
+        Parameters
+        ----------
+        style : str, optional
+            The record style to search.
+        **kwargs : any, optional
+            Any of the record-specific metadata keywords that can be searched
+            for, or other kwargs supported by get_records_df.  Note that if
+            you give kwargs the method will be much slower as it is effectively
+            calling len(get_records_df).
+            
+        Returns
+        ------
+        int
+            The count of records in the database matching the given parameters.
+        """
+        # Set default search parameters
+        if style is None:
+            style = self.select_record_style()
+
+        # Fast count of all records of a given style
+        if len(kwargs) == 0:
+            count = len([i for i in Path(self.host, style).glob(f'*.{self.format}')])
+
+        # Use get_records_df for delimited searches    
+        else:
+            count = len(self.get_records_df(style, **kwargs))
+
+        return count
 
     def add_record(self, record=None, style=None, name=None, model=None,
                    build=False, verbose=False):

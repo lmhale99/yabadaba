@@ -246,8 +246,58 @@ class CDCSDatabase(Database):
         else:
             raise ValueError('Multiple matching records found')
     
+    def count_records(self, style=None, name=None, query=None, keyword=None,
+                      **kwargs):
+        """
+        Retrieves a count of matching records from the database.  Much faster
+        than get_records if you only want to know the number of matches.
+        
+        Parameters
+        ----------
+        style : str, optional
+            The record style to search. If not given, a prompt will ask for it.
+        name : str or list, optional
+            Record name(s) to delimit by. 
+        query : dict, optional
+            A custom-built CDCS-style query to use for the record search.
+            Alternative to passing in the record-specific metadata kwargs.
+            Note that name can be given with query.
+        keyword : str, optional
+            Allows for a search of records whose contents contain a keyword.
+            Alternative to giving query or kwargs.
+        **kwargs : any, optional
+            Any of the record-specific metadata keywords that can be searched
+            for.
+        
+        Returns
+        ------
+        int
+            The count of records in the database matching the given parameters.
+        """
+        # Set default search parameters
+        if style is None:
+            style = self.select_record_style()
+
+        # Setup keyword search
+        if keyword is not None:
+            assert len(kwargs) == 0, 'keyword cannot be given with kwargs'
+            assert query is None, 'keyword cannot be given with query'
+
+        # Setup query
+        elif query is not None:
+            assert len(kwargs) == 0, 'query cannot be given with kwargs'
+        else:
+            query = load_record(style).cdcsquery(**kwargs)
+
+        count = 0
+        for n in iaslist(name):
+            count += self.cdcs.query_count(title=n, template=style, mongoquery=query, keyword=keyword)
+
+        return count
+
     def add_record(self, record=None, style=None, name=None, model=None,
-                   build=False, verbose=False, workspace=None):
+                   build=False, verbose=False,
+                   workspace=None, auto_set_pid_off=False):
         """
         Adds a new record to the database.
         
@@ -269,13 +319,20 @@ class CDCSDatabase(Database):
             If True, then the uploaded content will be (re)built based on the
             record's attributes.  If False (default), then record's existing
             content will be loaded if it exists, or built if it doesn't exist.
+        verbose : bool, optional
+            If True, info messages will be printed during operations.  Default
+            value is False.
         workspace : str or pandas.Series, optional
             The name of a workspace to assign the record to.  If not given
             then the record is not assigned to a workspace and will only be
             accessible to the user who uploaded it.
-        verbose : bool, optional
-            If True, info messages will be printed during operations.  Default
-            value is False.
+        auto_set_pid_off : bool
+            If True, the database's auto_set_pid setting will temporarily be
+            turned off for the record upload.  This is only needed if the
+            record contains a PID URL corresponding to a set PID xpath.  If
+            uploading multiple records, it is better to use the CDCS object's
+            auto_set_pid_off() context manager or to manually change the
+            setting off/on with CDCS.auto_set_pid.
 
         Returns
         ------
@@ -307,7 +364,8 @@ class CDCSDatabase(Database):
 
         # Upload to database
         self.cdcs.upload_record(template=record.style, content=content,
-                                title=record.name)
+                                title=record.name,
+                                auto_set_pid_off=auto_set_pid_off)
         if verbose:
             print(f'{record} added to {self.host}')
 
@@ -317,7 +375,8 @@ class CDCSDatabase(Database):
         return record
 
     def update_record(self, record=None, style=None, name=None, model=None,
-                      build=False, verbose=False, workspace=None):
+                      build=False, verbose=False,
+                      workspace=None, auto_set_pid_off=False):
         """
         Replaces an existing record with a new record of matching name and 
         style, but new content.
@@ -339,14 +398,20 @@ class CDCSDatabase(Database):
             If True, then the uploaded content will be (re)built based on the
             record's attributes.  If False (default), then record's existing
             content will be loaded if it exists, or built if it doesn't exist.
+        verbose : bool, optional
+            If True, info messages will be printed during operations.  Default
+            value is False.
         workspace : str or pandas.Series, optional
             The name of a workspace to assign the record to.  If not given
             then the record is not assigned to a workspace and will only be
             accessible to the user who uploaded it.
-        verbose : bool, optional
-            If True, info messages will be printed during operations.  Default
-            value is False.
-
+        auto_set_pid_off : bool
+            If True, the database's auto_set_pid setting will temporarily be
+            turned off for the record upload.  This is only needed if the
+            record contains a PID URL corresponding to a set PID xpath.  If
+            uploading multiple records, it is better to use the CDCS object's
+            auto_set_pid_off() context manager or to manually change the
+            setting off/on with CDCS.auto_set_pid.
         Returns
         ------
         Record

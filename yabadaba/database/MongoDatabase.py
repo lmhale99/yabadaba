@@ -4,6 +4,7 @@ from pathlib import Path
 import shutil
 import tarfile
 from collections import OrderedDict
+from typing import Optional, Tuple, Union
 
 # http://www.numpy.org/
 import numpy as np
@@ -25,18 +26,22 @@ from .. import load_record, recordmanager
 
 class MongoDatabase(Database):
 
-    def __init__(self, host='localhost', port=27017, database='iprPy', **kwargs):
+    def __init__(self,
+                 host: str = 'localhost',
+                 port: int = 27017,
+                 database: str = 'iprPy',
+                 **kwargs):
         """
         Initializes a connection to a Mongo database.
         
         Parameters
         ----------
-        host : str
+        host : str, optional
             The mongo host to connect to.  Default value is 'localhost'.
-        port : int
+        port : int, optional
             Then port to use in connecting to the mongo host.  Default value
             is 27017.
-        database : str
+        database : str, optional
             The name of the database in the mongo host to interact with.
             Default value is 'iprPy'
         **kwargs : dict, optional
@@ -48,9 +53,6 @@ class MongoDatabase(Database):
         self.__mongodb = MongoClient(host=host, port=port, document_class=DM, **kwargs)[database]
 
         # Define class host using client's host, port and database name
-        #host = self.mongodb.client.address[0]
-        #port = self.mongodb.client.address[1]
-        #database = self.mongodb.name
         host = f'{host}:{port}.{database}'
 
         # Pass host to Database initializer
