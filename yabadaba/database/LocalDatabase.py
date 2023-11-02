@@ -4,6 +4,7 @@ from pathlib import Path
 import ast
 import shutil
 import tarfile
+from typing import Optional, Tuple, Union
 
 # http://www.numpy.org/
 import numpy as np
@@ -11,14 +12,20 @@ import numpy as np
 # https://pandas.pydata.org/
 import pandas as pd
 
+# https://github.com/usnistgov/DataModelDict
+from DataModelDict import DataModelDict as DM
+
 # iprPy imports
 from ..tools import aslist, iaslist
 from . import Database
-from .. import load_record, recordmanager
+from ..record import recordmanager, load_record, Record
 
 class LocalDatabase(Database):
 
-    def __init__(self, host, format='json', indent=None):
+    def __init__(self,
+                 host: str,
+                 format: str = 'json',
+                 indent: Optional[int] = None):
         """
         Initializes a connection to a local database of JSON/XML records
         stored in a local directory.
@@ -52,21 +59,24 @@ class LocalDatabase(Database):
         self.__indent = indent
 
     @property
-    def style(self):
+    def style(self) -> str:
         """str: The database style"""
         return 'local'
 
     @property
-    def format(self):
+    def format(self) -> str:
         """str: The format that records are saved as: 'json' or 'xml'"""
         return self.__format
 
     @property
-    def indent(self):
+    def indent(self) -> Optional[int]:
         """int or None: The record indentation setting to use when saving records."""
         return self.__indent
 
-    def cache(self, style, refresh=False, addnew=True):
+    def cache(self,
+              style: str,
+              refresh: bool = False,
+              addnew: bool = True) -> pd.DataFrame:
         """
         Loads/generates the metadata cache csv file for a given record style.
 
@@ -82,6 +92,11 @@ class LocalDatabase(Database):
             If True (default), then the metadata for new records will be
             appended to the stored metadata cache.  If False, then the stored
             metadata is returned as is.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The contents of the cache csv file.
         """
         recordmanager.assert_style(style)
         cachefile = Path(self.host, f'{style}.csv')
@@ -149,7 +164,11 @@ class LocalDatabase(Database):
 
         return cache
 
-    def get_records(self, style=None, return_df=False, refresh_cache=False, **kwargs):
+    def get_records(self, 
+                    style: Optional[str] = None,
+                    return_df: bool = False,
+                    refresh_cache: bool = False,
+                    **kwargs) -> Union[list, Tuple[list, pd.DataFrame]]:
         """
         Produces a list of all matching records in the database.
         
@@ -195,7 +214,10 @@ class LocalDatabase(Database):
         else:
             return records
 
-    def get_records_df(self, style=None, refresh_cache=False, **kwargs):
+    def get_records_df(self, 
+                       style: Optional[str] = None,
+                       refresh_cache: bool = False,
+                       **kwargs) -> pd.DataFrame:
         """
         Produces a table of metadata for matching records in the database.
         
@@ -248,7 +270,10 @@ class LocalDatabase(Database):
 
         return df
 
-    def get_record(self, style=None, refresh_cache=False, **kwargs):
+    def get_record(self,
+                   style: Optional[str] = None,
+                   refresh_cache: bool = False,
+                   **kwargs) -> Record:
         """
         Returns a single matching record from the database.
         
@@ -296,7 +321,9 @@ class LocalDatabase(Database):
         else:
             raise ValueError('Multiple matching records found')
 
-    def count_records(self, style=None, **kwargs):
+    def count_records(self,
+                      style: Optional[str] = None,
+                      **kwargs) -> int:
         """
         Retrieves a count of matching records from the database.  Fast if you
         only want the total number of records of a given style. 
@@ -330,8 +357,13 @@ class LocalDatabase(Database):
 
         return count
 
-    def add_record(self, record=None, style=None, name=None, model=None,
-                   build=False, verbose=False):
+    def add_record(self,
+                   record: Optional[Record] = None,
+                   style: Optional[str] = None,
+                   name: Optional[str] = None,
+                   model: Union[str, DM, None] = None,
+                   build: bool = False,
+                   verbose: bool = False) -> Record:
         """
         Adds a new record to the database.
         
@@ -407,8 +439,13 @@ class LocalDatabase(Database):
 
         return record
 
-    def update_record(self, record=None, style=None, name=None, model=None,
-                      build=False, verbose=False):
+    def update_record(self,
+                      record: Optional[Record] = None,
+                      style: Optional[str] = None,
+                      name: Optional[str] = None,
+                      model: Union[str, DM, None] = None,
+                      build: bool = False,
+                      verbose: bool = False) -> Record:
         """
         Replaces an existing record with a new record of matching name and
         style, but new content.
@@ -488,7 +525,11 @@ class LocalDatabase(Database):
 
         return record
 
-    def delete_record(self, record=None, style=None, name=None, verbose=False):
+    def delete_record(self,
+                      record: Optional[Record] = None,
+                      style: Optional[str] = None,
+                      name: Optional[str] = None,
+                      verbose: bool = False):
         """
         Permanently deletes a record from the database.
         
@@ -529,8 +570,12 @@ class LocalDatabase(Database):
         if verbose:
             print(f'{record} deleted from {self.host}')
 
-    def add_tar(self, record=None, style=None, name=None, tar=None,
-                root_dir=None):
+    def add_tar(self, 
+                record: Optional[Record] = None,
+                style: Optional[str] = None,
+                name: Optional[str] = None,
+                tar: Optional[bytes] = None,
+                root_dir: Optional[Path] = None):
         """
         Archives and stores a folder associated with a record.
         
@@ -598,9 +643,13 @@ class LocalDatabase(Database):
         else:
             raise ValueError('tar and root_dir cannot both be given')
 
-    def get_tar(self, record=None, style=None, name=None, raw=False):
+    def get_tar(self,
+                record: Optional[Record] = None,
+                style: Optional[str] = None,
+                name: Optional[str] = None,
+                raw: bool = False) -> Union[tarfile.TarFile, bytes]:
         """
-        Retrives the tar archive associated with a record in the database.
+        Retrieves the tar archive associated with a record in the database.
         
         Parameters
         ----------
@@ -616,7 +665,7 @@ class LocalDatabase(Database):
         
         Returns
         -------
-        tarfile or str
+        tarfile or bytes
             The tar archive as an open tarfile if raw=False, or as a binary str if
             raw=True.
         
@@ -634,10 +683,6 @@ class LocalDatabase(Database):
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
 
-        # Verify that record exists
-        #else:
-        #    record = self.get_record(name=record.name, style=record.style)
-
         # Build path to record
         tar_path = Path(self.host, record.style, record.name+'.tar.gz')
 
@@ -650,7 +695,10 @@ class LocalDatabase(Database):
             record.tar = tar
             return tar
 
-    def delete_tar(self, record=None, style=None, name=None):
+    def delete_tar(self, 
+                   record: Optional[Record] = None,
+                   style: Optional[str] = None,
+                   name: Optional[str] = None):
         """
         Deletes a tar file from the database.
         
@@ -679,10 +727,6 @@ class LocalDatabase(Database):
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
 
-        # Verify that record exists
-        #else:
-        #    record = self.get_record(name=record.name, style=record.style)
-
         # Build path to tar file
         tar_path = Path(self.host, record.style, record.name+'.tar.gz')
 
@@ -690,8 +734,12 @@ class LocalDatabase(Database):
         if tar_path.is_file():
             tar_path.unlink()
 
-    def update_tar(self, record=None, style=None, name=None, tar=None,
-                   root_dir=None):
+    def update_tar(self,
+                   record: Optional[Record] = None,
+                   style: Optional[str] = None,
+                   name: Optional[str] = None,
+                   tar: Optional[bytes] = None,
+                   root_dir: Optional[Path] = None):
         """
         Replaces an existing tar archive for a record with a new one.
         
@@ -722,8 +770,12 @@ class LocalDatabase(Database):
         self.add_tar(record=record, name=name, style=style, tar=tar,
                      root_dir=root_dir)
 
-    def add_folder(self, record=None, name=None, style=None, filenames=None,
-                   root_dir=None):
+    def add_folder(self,
+                   record: Optional[Record] = None,
+                   style: Optional[str] = None,
+                   name: Optional[str] = None,
+                   filenames: Union[str, Path, list, None] = None,
+                   root_dir: Optional[Path] = None):
         """
         Stores a folder associated with a record.
         
@@ -733,10 +785,10 @@ class LocalDatabase(Database):
             The record to associate the folder with.  If not given, then
             name and/or style necessary to uniquely identify the record are
             needed.
-        name : str, optional
-            The name to use in uniquely identifying the record.
         style : str, optional
             The style to use in uniquely identifying the record.
+        name : str, optional
+            The name to use in uniquely identifying the record.
         filenames : str or list, optional
             The paths to files that are to be added to the record's folder.
             Cannot be given with root_dir.
@@ -791,7 +843,10 @@ class LocalDatabase(Database):
         else:
             raise ValueError('filenames and root_dir cannot both be given')
 
-    def get_folder(self, record=None, style=None, name=None):
+    def get_folder(self,
+                   record: Optional[Record] = None,
+                   style: Optional[str] = None,
+                   name: Optional[str] = None) -> Path:
         """
         Retrives the location of the folder associated with a record in the
         database. 
@@ -800,10 +855,10 @@ class LocalDatabase(Database):
         ----------
         record : Record, optional
             The record to retrieve the associated folder location for.
-        name : str, optional
-            The name to use in uniquely identifying the record.
         style : str, optional
             The style to use in uniquely identifying the record.
+        name : str, optional
+            The name to use in uniquely identifying the record.
         
         Returns
         -------
@@ -839,7 +894,10 @@ class LocalDatabase(Database):
         else:
             raise NotADirectoryError('No folder saved for the record')
 
-    def delete_folder(self, record=None, name=None, style=None):
+    def delete_folder(self,
+                      record: Optional[Record] = None,
+                      style: Optional[str] = None,
+                      name: Optional[str] = None):
         """
         Deletes a folder from the database.
         
@@ -849,10 +907,10 @@ class LocalDatabase(Database):
             The record associated with the folder to delete.  If not
             given, then name and/or style necessary to uniquely identify
             the record are needed.
-        name : str, optional
-            The name to use in uniquely identifying the record.
         style : str, optional
             The style to use in uniquely identifying the record.
+        name : str, optional
+            The name to use in uniquely identifying the record.
         
         Raises
         ------
@@ -879,8 +937,13 @@ class LocalDatabase(Database):
         if dir_path.exists():
             shutil.rmtree(dir_path)
 
-    def update_folder(self, record=None, style=None, name=None, filenames=None,
-                      root_dir=None, clear=True):
+    def update_folder(self,
+                      record: Optional[Record] = None,
+                      style: Optional[str] = None,
+                      name: Optional[str] = None,
+                      filenames: Union[str, Path, list, None] = None,
+                      root_dir: Optional[Path] = None,
+                      clear: bool = True):
         """
         Updates an existing folder for a record.
         
@@ -890,10 +953,10 @@ class LocalDatabase(Database):
             The record to associate the folder with.  If not given, then 
             name and/or style necessary to uniquely identify the record are 
             needed.
-        name : str, optional
-            The name to use in uniquely identifying the record.
         style : str, optional
             The style to use in uniquely identifying the record.
+        name : str, optional
+            The name to use in uniquely identifying the record.
         filenames : str or list, optional
             The paths to files that are to be added to the record's folder.
             Cannot be given with root_dir.
