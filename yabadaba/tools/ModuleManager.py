@@ -7,7 +7,8 @@ class ModuleManager():
     """
     Base class for managing module subclasses
     """
-    def __init__(self, parentname: str):
+    def __init__(self,
+                 parentname: str):
         """
         Creates a ModuleManager object
 
@@ -92,7 +93,8 @@ class ModuleManager():
             print(f'- {style}: {self.failed_styles[style]}')
         print()
 
-    def assert_style(self, style: str):
+    def assert_style(self,
+                     style: str):
         """
         Checks if the style successfully loaded, throws an error otherwise.
         
@@ -113,7 +115,8 @@ class ModuleManager():
         elif style not in self.loaded_style_names:
             raise KeyError(f'Unknown {self.parentname} style {style}')
 
-    def get_class(self, style):
+    def get_class(self,
+                  style: str):
         """
         Retrieves the class of the given style.
 
@@ -130,7 +133,10 @@ class ModuleManager():
         self.assert_style(style)
         return self.loaded_styles[style]
 
-    def init(self, style, *args, **kwargs):
+    def init(self,
+             style: str,
+             *args,
+             **kwargs):
         """
         Initializes an object of the given style.
 

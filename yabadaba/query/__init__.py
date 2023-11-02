@@ -1,6 +1,10 @@
 # coding: utf-8
 __all__ = ['querymanager', 'Query', 'load_query']
 
+# Standard Python libraries
+from typing import Optional
+
+
 # Relative imports
 #from . import str_contains, str_match, in_list, int_match, list_contains, date_match, float_match
 from .Query import Query
@@ -17,8 +21,12 @@ querymanager.import_style('int_match', '.IntMatchQuery', __name__)
 querymanager.import_style('float_match', '.FloatMatchQuery', __name__)
 querymanager.import_style('date_match', '.DateMatchQuery', __name__)
 
-def load_query(style, name=None, parent=None, path=None, description=None,
-               **kwargs):
+def load_query(style: str,
+               name: Optional[str] = None,
+               parent: Optional[str] = None,
+               path: Optional[str] = None,
+               description: Optional[str] = None,
+               **kwargs) -> Query:
     """
     Loads a Query subclass associated with a given query style.
 

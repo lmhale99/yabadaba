@@ -1,14 +1,22 @@
 # coding: utf-8
+# Standard Python libraries
+from typing import Optional
 
 # Relative imports
-from ..tools import screen_input
+from ..tools import screen_input, ModuleManager
 from . import databasemanager as default_databasemanager
+from . import Database
 from .. import settings as default_settings
+from .. import Settings
 
 __all__ = ['load_database']
 
-def load_database(name=None, style=None, host=None, settings=None, 
-                  databasemanager=None, **kwargs):
+def load_database(name: Optional[str] = None,
+                  style: Optional[str] = None,
+                  host: Optional[str] = None,
+                  settings: Optional[Settings.Settings] = None, 
+                  databasemanager: Optional[ModuleManager] = None,
+                  **kwargs) -> Database:
     """
     Loads a database object.  Can be either loaded from stored settings or
     by defining all needed access information.
@@ -22,10 +30,10 @@ def load_database(name=None, style=None, host=None, settings=None,
         The database style to use.
     host : str, optional
         The URL/file path where the database is hosted.
-    settings : datamodelbase.Settings, optional
+    settings : yabadaba.Settings.Settings, optional
         A Settings object.  Allows for different settings files to be used
         by downstream packages.
-    databasemanager : datamodelbase.tools.ModuleManager, optional
+    databasemanager : yabadaba.tools.ModuleManager, optional
         Allows for an alternate databasemanager to be specified by downstream
         packages. 
     kwargs : dict, optional
