@@ -207,7 +207,7 @@ class UnitConverter():
             
             # Scale derived units by working units
             if 'energy' in kwargs:
-                J = self.J / self.unit[kwargs['energy']]
+                J = self.unit['J'] / self.unit[kwargs['energy']]
                 
                 # Scale base units by derived units
                 if 'mass' not in kwargs:
