@@ -1,6 +1,20 @@
 Updates
 =======
 
+0.2.2
+-----
+
+- A count_records() method added to all Database styles that gives a count of
+  all matching records.
+- CDCSDatabase add_record() and update_record() have additional parameter
+  auto_set_pid_off that turns off the auto_set_pid setting when uploading new
+  record contents to avoid URL assignment issues.
+- Bug fix with UnitConverter when setting working units with an energy value.
+- Bug fix with get_tar() that now correctly returns tar contents.
+- Depreciation fixes for IPython and pandas.
+- Typing should be added to all method headers.
+
+
 0.2.1
 -----
 
@@ -21,6 +35,8 @@ Updates
   record's associated tar file simply by giving the file name.  This builds on
   the tar attribute above, so getting files in this way is both convenient and
   efficient.
+- CDCSDatabase - bug fix for get_records() with no matches.
+- Compatibility updates for python 3.11 
 
 0.2.0
 -----
