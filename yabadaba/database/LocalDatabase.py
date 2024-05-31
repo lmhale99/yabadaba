@@ -197,6 +197,10 @@ class LocalDatabase(Database):
             The corresponding metadata values for the records.  Only returned
             if return_df is True.
         """
+        # Set default search parameters
+        if style is None:
+            style = self.select_record_style()
+
         # Get df
         df = self.get_records_df(style, refresh_cache=refresh_cache, **kwargs)
 
