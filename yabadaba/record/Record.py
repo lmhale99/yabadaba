@@ -29,6 +29,7 @@ class Record():
                  model: Union[str, io.IOBase, DM, None] = None,
                  name: Optional[str] = None,
                  database = None,
+                 value_objects = None,
                  **kwargs: any):
         """
         Initializes a Record object for a given style.
@@ -54,11 +55,31 @@ class Record():
         self.tar = None
         self.database = database
 
+        self.__value_objects = None
+        self.__value_objects = tuple(self._init_value_objects())
+
         if model is not None:
             assert len(kwargs) == 0, f"cannot specify kwargs with model: '{kwargs.keys()}'"
             self.load_model(model, name=name)
         else:
             self.set_values(name=name, **kwargs)
+
+    def _init_value_objects(self) -> list:
+        """
+        Method that defines the value objects for the Record.  This should
+        1. Call the method's super().
+        2. Use yabadaba.load_value() to build Value objects that are set to
+           private attributes of self.
+        3. Append the list returned by the super() with the new Value objects.
+
+        Returns
+        -------
+        value_objects: A list of all value objects.
+        """
+        if self.__value_objects is not None:
+            raise RuntimeError('_init_value_objects should only be called by Record.__init__')
+
+        return []
 
     def load_model(self,
                    model: Union[str, io.IOBase, DM],
@@ -84,21 +105,29 @@ class Record():
         else:
             self.name = name
 
+        # Read/set model
         self._set_model(model)
 
-    def set_values(self, name: Optional[str] = None):
+        # Extract parameter values 
+        rec = self.model[self.modelroot]
+        for value_object in self.value_objects:
+            value_object.load_model(rec)
+
+    def set_values(self, **kwargs):
         """
         Set multiple object attributes at the same time.
 
         Parameters
         ----------
-        name : str, optional
-            The name to assign to the record.  Often inferred from other
-            attributes if not given.
+        **kwargs: any
+            Any parameters for the record that you wish to set values for.
         """
-        # Set name if given
-        if name is not None:
-            self.name = name
+        if 'name' in kwargs:
+            self.name = kwargs['name']
+        
+        for value_object in self.value_objects:
+            if value_object.name in kwargs:
+                setattr(self, value_object.name, kwargs[value_object.name])
 
     def __str__(self) -> str:
         """str: The string representation of the record"""
@@ -145,6 +174,11 @@ class Record():
             self.__name = None
 
     @property
+    def value_objects(self) -> tuple:
+        """tuple: The Value objects associated with the Record"""
+        return self.__value_objects
+
+    @property
     def modelroot(self) -> str:
         """str : The name of the root element in the model contents."""
         raise NotImplementedError('Specific to subclasses')
@@ -182,7 +216,13 @@ class Record():
         """
         Generates and returns model content based on the values set to object.
         """
-        raise NotImplementedError('Not defined for this class')
+        self.__model = DM()
+        self.__model[self.modelroot] = rec = DM()
+
+        for value_object in self.value_objects:
+            value_object.build_model(rec)        
+
+        return self.__model
 
     def metadata(self) -> dict:
         """
@@ -190,12 +230,25 @@ class Record():
         Useful for quickly comparing records and for building pandas.DataFrames
         for multiple records of the same style.
         """
-        return {}
+        # Initialize with only name
+        meta = {'name': self.name}
+
+        # Add value object values
+        for value_object in self.value_objects:
+            value_object.metadata(meta)
+        
+        return meta
 
     @property
     def queries(self) -> dict:
         """dict: Query objects and their associated parameter names."""
-        return {}
+        
+        # Build dict containing all queries of all values
+        queries = {}
+        for value_object in self.value_objects:
+            queries.update(value_object.queries)
+        
+        return queries
 
     @property
     def querynames(self) -> list:
