@@ -9,6 +9,8 @@ from tarfile import TarFile
 # https://ipython.org/
 from IPython.display import display, HTML
 
+from PIL import Image
+
 # https://lxml.de/
 import lxml.etree as ET
 
@@ -509,3 +511,47 @@ class Record():
             return fileio
         else:
             raise ValueError(f'{filename} exists in tar, but is not a file')
+
+    def display_image(self,
+                      filename: Union[str, Path],
+                      localroot: Union[str, Path, None] = None,
+                      width: Optional[int] = None,
+                      height: Optional[int] = None):
+        """
+        For IPython-based environments, this retrieves an image file either
+        locally or from within the record's tar archive and displays it.
+
+        Parameters
+        ----------
+        filename : str or Path
+            The name/path for the file.  For local files, this is taken
+            relative to localroot.  For files in the tar archive, this is taken
+            relative to the tar's root directory which is always named for the
+            record, i.e., {self.name}/{filename}.
+        localroot : str, Path or None, optional
+            The local root directory that filename (if it exists) is relative
+            to.  The default value of None will use the current working
+            directory.
+        
+        Raises
+        ------
+        ValueError
+            If filename exists in the tar but is not a file.
+        """
+        fileio = self.get_file(filename=filename, localroot=localroot)
+        img = Image.open(fileio)
+
+        if width is not None:
+            if height is None:
+                oldwidth, oldheight = img.size
+                height = round(oldheight * (width / oldwidth))
+            size = (width, height)
+            img = img.resize(size)
+
+        elif height is not None:
+            oldwidth, oldheight = img.size
+            width = round(oldwidth * (height / oldheight))
+            size = (width, height)
+            img = img.resize(size)
+
+        display(img)
