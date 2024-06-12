@@ -117,6 +117,7 @@ class LocalDatabase(Database):
             def toint(column):
                 """Convert int columns as needed"""
                 try:
+                    assert column.dtype == float
                     newcolumn = column.astype(int)
                     assert np.allclose(column, newcolumn)
                 except:
