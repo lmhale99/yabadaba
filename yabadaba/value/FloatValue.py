@@ -90,7 +90,7 @@ class FloatValue(Value):
         if self.unit is None:
             return self.value
         else:
-            return uc.model(self.value, self.modelunit)
+            return uc.model(self.value, self.unit)
         
     def load_model_value(self, val):
         if self.unit is None:
