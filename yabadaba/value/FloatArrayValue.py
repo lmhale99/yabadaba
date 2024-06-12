@@ -1,12 +1,12 @@
 from typing import Optional, Union, Any
 
-from DataModelDict import DataModelDict as DM
+import numpy as np
+import numpy.typing as npt
 
-from ..query import load_query
 from . import Value
 from .. import unitconvert as uc
 
-class FloatValue(Value):
+class FloatArrayValue(Value):
     
     def __init__(self,
                  name: str,
@@ -14,12 +14,12 @@ class FloatValue(Value):
                  defaultvalue: Optional[Any] = None,
                  valuerequired: bool = False,
                  allowedvalues: Optional[tuple] = None,
-                 metadatakey: Union[str, bool, None] = None,
+                 metadatakey: Union[str, bool, None] = False,
                  metadataparent: Optional[str] = None,
                  modelpath: Optional[str] = None,
                  unit: Optional[str] = None):
         """
-        Initialize a general Parameter object.
+        Initialize an FloatArrayValue object for managing arrays of floats.
 
         Parameters
         ----------
@@ -55,7 +55,15 @@ class FloatValue(Value):
             (default) indicates that no unit conversions should be done.
         """
         self.__unit = unit
+
+        # Require metadatakey to be explicitly given
+        if metadatakey is None:
+            metadatakey = False
         
+        # Check that allowedvalues is not given
+        if allowedvalues is not None:
+            raise ValueError('allowedvalues not allowed for arrays')
+
         super().__init__(name, record, defaultvalue=defaultvalue,
                          valuerequired=valuerequired, allowedvalues=allowedvalues,
                          metadatakey=metadatakey, metadataparent=metadataparent,
@@ -72,31 +80,13 @@ class FloatValue(Value):
         elif isinstance(val, str) and self.unit is not None:
             return uc.set_literal(val)
         else:
-            return float(val)
-    
-    @property
-    def _default_queries(self) -> dict:
-        """dict: Default query operations to associate with the Parameter style"""
-        return {
-            self.name: load_query('float_match',
-                                  name=self.metadatakey,
-                                  parent=self.metadataparent,
-                                  path=f'{self.record.modelroot}.{self.modelpath}',
-                                  description=f'Return only the records where {self.name} matches a given value')
-        }
+            return np.asarray(val, dtype=float)
     
     def build_model_value(self):
-        
-        if self.unit is None:
-            return self.value
-        else:
-            return uc.model(self.value, self.modelunit)
+        return uc.model(self.value, self.unit)
         
     def load_model_value(self, val):
-        if self.unit is None:
-            return val
-        else:
-            return uc.value_unit(val)
+        return uc.value_unit(val)
         
     def metadata(self, meta):
         """
@@ -114,7 +104,7 @@ class FloatValue(Value):
         value = self.value
         if self.unit is not None:
             value = uc.get_in_units(value, self.unit)
-        
+
         if self.metadataparent is None:
             meta[self.metadatakey] = value
 
@@ -122,4 +112,3 @@ class FloatValue(Value):
             if self.metadataparent not in meta:
                 meta[self.metadataparent] = {}
             meta[self.metadataparent][self.metadatakey] = value
-        

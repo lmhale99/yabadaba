@@ -13,13 +13,14 @@ from ..tools import ModuleManager
 valuemanager = ModuleManager('Value')
 
 
-# Add the modular Query styles (future)
+# Add the modular Value styles
 valuemanager.import_style('base', '.Value', __name__)
 valuemanager.import_style('str', '.StrValue', __name__)
 valuemanager.import_style('longstr', '.LongStrValue', __name__)
 valuemanager.import_style('float', '.FloatValue', __name__)
 valuemanager.import_style('int', '.IntValue', __name__)
 valuemanager.import_style('bool', '.BoolValue', __name__)
+valuemanager.import_style('floatarray', '.FloatArrayValue', __name__)
 
 def load_value(style: str,
                name: Optional[str] = None,
