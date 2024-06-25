@@ -31,6 +31,7 @@ class Record():
                  model: Union[str, io.IOBase, DM, None] = None,
                  name: Optional[str] = None,
                  database = None,
+                 noname: bool = False,
                  value_objects = None,
                  **kwargs: any):
         """
@@ -56,6 +57,7 @@ class Record():
         self.__name = None
         self.tar = None
         self.database = database
+        self.noname = noname
 
         self.__value_objects = None
         self.__value_objects = tuple(self._init_value_objects())
@@ -163,7 +165,7 @@ class Record():
     @property
     def name(self) -> str:
         """str: The record's name."""
-        if self.__name is not None:
+        if self.__name is not None or self.noname:
             return self.__name
         else:
             raise AttributeError('record name not set')
@@ -171,9 +173,22 @@ class Record():
     @name.setter
     def name(self, value: Optional[str]):
         if value is not None:
+            if self.noname:
+                raise TypeError('name turned off for this record')
             self.__name = str(value)
         else:
             self.__name = None
+
+    @property
+    def noname(self) -> bool:
+        """bool: Indicates that the record should not have a name."""
+        return self.__noname
+
+    @noname.setter
+    def noname(self, val: bool):
+        if not isinstance(val, bool):
+            raise TypeError('noname must be a bool')
+        self.__noname = val
 
     @property
     def value_objects(self) -> tuple:
@@ -232,8 +247,10 @@ class Record():
         Useful for quickly comparing records and for building pandas.DataFrames
         for multiple records of the same style.
         """
+        meta = {}
         # Initialize with only name
-        meta = {'name': self.name}
+        if self.noname is False:
+            meta['name'] = self.name
 
         # Add value object values
         for value_object in self.value_objects:
@@ -291,7 +308,10 @@ class Record():
         queries = self.queries
 
         # Query name
-        matches = load_query('str_match', name='name').pandas(dataframe, name)
+        if self.noname is False:
+            matches = load_query('str_match', name='name').pandas(dataframe, name)
+        elif name is not None:
+            raise ValueError('name turned off for record')
 
         # Apply queries based on given kwargs
         for key in kwargs:
@@ -325,7 +345,10 @@ class Record():
         querydict['$and'] = querylist = [{}]
 
         # Query name
-        load_query('str_match', path='name').mongo(querylist, name)
+        if self.noname is False:
+            load_query('str_match', path='name').mongo(querylist, name)
+        elif name is not None:
+            raise ValueError('name turned off for record')
 
         # Apply queries based on given kwargs
         for key in kwargs:
