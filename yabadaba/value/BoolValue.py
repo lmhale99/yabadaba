@@ -11,20 +11,19 @@ class BoolValue(Value):
     
     def set_value_mod(self, val):
         # Pass Boolean values through without changing
-        if val is True:
-            return True
-        elif val is False:
-            return False
+        if val is True or val is False or val is None:
+            return val
         
-        # Convert strings
-        elif val.lower() in ['true', 't']:
-            return True
-        elif val.lower() in ['false', 'f']:
-            return False
-        
-        # Issue error for invalid string
+        if isinstance(val, str):
+            # Convert strings
+            if val.lower() in ['true', 't']:
+                return True
+            elif val.lower() in ['false', 'f']:
+                return False
+            else:
+                raise ValueError(f'String value for {self.name} not recognized as a Boolean value.')
         else:
-            raise ValueError('Invalid Boolean string')
+            raise TypeError(f'Invalid type for Boolean {self.name}. Must be True, False, None, or a str representation of True or False')
     
     @property
     def _default_queries(self) -> dict:

@@ -56,7 +56,6 @@ class Value():
         self.__defaultvalue = defaultvalue
         self.__valuerequired = valuerequired
         self.__allowedvalues = allowedvalues
-        self.value = defaultvalue
 
         if metadatakey is None:
             metadatakey = self.name
@@ -72,6 +71,8 @@ class Value():
         if modelpath is None:
             modelpath = name
         self.__modelpath = str(modelpath)
+
+        self.value = defaultvalue
 
         self.__queries = deepcopy(self._default_queries)
 
@@ -127,9 +128,8 @@ class Value():
     def value(self, val):
         val = self.set_value_mod(val)
         
-        if self.allowedvalues is not None:
-            if val not in self.allowedvalues:
-                raise ValueError(f'Invalid value for {self.name}')
+        if self.allowedvalues is not None and val is not None and val not in self.allowedvalues:
+            raise ValueError(f'Invalid value {val} for {self.name}. Allowed values are {self.allowedvalues}')
             
         self.__value = val
 
@@ -222,8 +222,11 @@ class Value():
             Cannot be given with before.  If neither before nor after is given
             then the parameter will be inserted into the dict normally.
         """
+        # Build value to output
+        value = self.build_model_value()
+        
         # Do nothing if value not required and empty
-        if self.value is None and self.valuerequired is False:
+        if value is None and self.valuerequired is False:
             return
 
         # Split path
@@ -237,38 +240,13 @@ class Value():
             m = m[key]
         
         # Insert the parameter's value into the model
-        dict_insert(m, path[-1], self.build_model_value(), **kwargs)
+        dict_insert(m, path[-1], value, **kwargs)
 
 
     def build_model_value(self):
         """Function to modify how values are represented in the model"""
         return self.value
     
-    def load_model_value(self, val):
-        """Function to modify how values are interpreted from the model"""
-        return val
-
-    def metadata(self, meta):
-        """
-        Adds the parameter to the record's metadata dict.
-
-        Parameters
-        ----------
-        meta : dict
-            The metadata dict being built for the record.
-        """
-
-        if self.metadatakey is False:
-            return
-        
-        if self.metadataparent is None:
-            meta[self.metadatakey] = self.value
-
-        else:
-            if self.metadataparent not in meta:
-                meta[self.metadataparent] = {}
-            meta[self.metadataparent][self.metadatakey] = self.value
-        
     def load_model(self, model, setvalue=True) -> Optional[Any]:
         """
         Loads the parameter value from the record's model.
@@ -294,3 +272,32 @@ class Value():
             self.value = val
         else:
             return val
+
+    def load_model_value(self, val):
+        """Function to modify how values are interpreted from the model"""
+        return val
+
+    def metadata(self, meta):
+        """
+        Adds the parameter to the record's metadata dict.
+
+        Parameters
+        ----------
+        meta : dict
+            The metadata dict being built for the record.
+        """
+
+        if self.metadatakey is False:
+            return
+        
+        if self.metadataparent is None:
+            meta[self.metadatakey] = self.metadata_value()
+
+        else:
+            if self.metadataparent not in meta:
+                meta[self.metadataparent] = {}
+            meta[self.metadataparent][self.metadatakey] = self.metadata_value()
+
+    def metadata_value(self):
+        """Function to modify how values are represented in the metadata"""
+        return self.value
