@@ -117,6 +117,13 @@ class Record():
         for value_object in self.value_objects:
             value_object.load_model(rec)
 
+        if self.noname is False:
+            try:
+                self.name
+            except:
+                if self.defaultname is not None:
+                    self.name = self.defaultname
+
     def set_values(self, **kwargs):
         """
         Set multiple object attributes at the same time.
@@ -132,6 +139,13 @@ class Record():
         for value_object in self.value_objects:
             if value_object.name in kwargs:
                 setattr(self, value_object.name, kwargs[value_object.name])
+
+        if self.noname is False:
+            try:
+                self.name
+            except:
+                if self.defaultname is not None:
+                    self.name = self.defaultname
 
     def __str__(self) -> str:
         """str: The string representation of the record"""
@@ -178,6 +192,11 @@ class Record():
             self.__name = str(value)
         else:
             self.__name = None
+
+    @property
+    def defaultname(self) -> Optional[str]:
+        """str: The name to default to, usually based on other properties"""
+        return None
 
     @property
     def noname(self) -> bool:
