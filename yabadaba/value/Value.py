@@ -18,7 +18,7 @@ class Value():
                  metadataparent: Optional[str] = None,
                  modelpath: Optional[str] = None):
         """
-        Initialize a general Parameter object.
+        Initialize a Value object.
 
         Parameters
         ----------

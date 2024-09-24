@@ -19,7 +19,7 @@ class FloatValue(Value):
                  modelpath: Optional[str] = None,
                  unit: Optional[str] = None):
         """
-        Initialize a general Parameter object.
+        Initialize a FloatValue object.
 
         Parameters
         ----------
@@ -86,6 +86,8 @@ class FloatValue(Value):
         }
     
     def build_model_value(self):
+        if self.value is None:
+            return None
         
         if self.unit is None:
             return self.value

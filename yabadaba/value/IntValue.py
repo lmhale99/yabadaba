@@ -18,7 +18,10 @@ class IntValue(Value):
                 raise TypeError(f'{self.name} not an int!')
             return rval
         else:
-            return int(val)
+            try:
+                return int(val)
+            except Exception as e:
+                raise ValueError(f'{self.name} not an int!') from e
     
     @property
     def _default_queries(self) -> dict:

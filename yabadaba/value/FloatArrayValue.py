@@ -83,6 +83,8 @@ class FloatArrayValue(Value):
             return np.asarray(val, dtype=float)
     
     def build_model_value(self):
+        if self.value is None:
+            return None
         return uc.model(self.value, self.unit)
         
     def load_model_value(self, val):
