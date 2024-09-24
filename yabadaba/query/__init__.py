@@ -20,6 +20,7 @@ querymanager.import_style('list_contains', '.ListContainsQuery', __name__)
 querymanager.import_style('int_match', '.IntMatchQuery', __name__)
 querymanager.import_style('float_match', '.FloatMatchQuery', __name__)
 querymanager.import_style('date_match', '.DateMatchQuery', __name__)
+querymanager.import_style('month_match', '.MonthMatchQuery', __name__)
 
 def load_query(style: str,
                name: Optional[str] = None,
