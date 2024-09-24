@@ -278,6 +278,22 @@ class Record():
         return meta
 
     @property
+    def metadatakeys(self) -> list:
+        """list: The keys included in the metadata dict"""
+        keys = []
+        if self.noname is False:
+            keys.append('name')
+        
+        # Add value object values
+        for value_object in self.value_objects:
+            if value_object.metadataparent is not None:
+                keys.append(value_object.metadataparent)
+            elif value_object.metadatakey is not False:
+                keys.append(value_object.metadatakey)
+        
+        return keys
+
+    @property
     def queries(self) -> dict:
         """dict: Query objects and their associated parameter names."""
         
@@ -509,7 +525,8 @@ class Record():
 
     def get_file(self,
                  filename: Union[str, Path],
-                 localroot: Union[str, Path, None] = None):
+                 localroot: Union[str, Path, None] = None,
+                 local: bool = True):
         """
         Retrieves a file either locally or from the record's tar archive.
 
@@ -524,6 +541,10 @@ class Record():
             The local root directory that filename (if it exists) is relative
             to.  The default value of None will use the current working
             directory.
+        local : bool, optional
+            If True (default) then the localroot will be checked for the file
+            prior to retrieving the file from the tar.  If False then only the
+            tar will be checked.
         
         Raises
         ------
@@ -536,16 +557,17 @@ class Record():
             A file-like object in binary read mode that allows for the file
             contents to be read.
         """
-        # Set default root path
-        if localroot is None:
-            localroot = Path.cwd()
-        else:
-            localroot = Path(localroot)
+        if local:
+            # Set default root path
+            if localroot is None:
+                localroot = Path.cwd()
+            else:
+                localroot = Path(localroot)
 
-        # Return local copy of file if it exists
-        localfile = Path(localroot, filename)
-        if Path(localfile).is_file():
-            return open(localfile, 'rb')
+            # Return local copy of file if it exists
+            localfile = Path(localroot, filename)
+            if Path(localfile).is_file():
+                return open(localfile, 'rb')
 
         # Return file extracted from tar
         fileio = self.tar.extractfile(f'{self.name}/{filename}')
