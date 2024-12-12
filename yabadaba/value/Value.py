@@ -16,7 +16,8 @@ class Value():
                  allowedvalues: Optional[tuple] = None,
                  metadatakey: Union[str, bool, None] = None,
                  metadataparent: Optional[str] = None,
-                 modelpath: Optional[str] = None):
+                 modelpath: Optional[str] = None,
+                 description: Optional[str] = None):
         """
         Initialize a Value object.
 
@@ -49,6 +50,9 @@ class Value():
             The period-delimited path after the record root element for
             where the parameter will be found in the built data model.  If set
             to None (default) then name will be used for modelpath.
+        description: str or None, optional
+            A short description for the value.  If not given, then the record name
+            will be used.
         """
 
         self.__name = str(name)
@@ -56,6 +60,10 @@ class Value():
         self.__defaultvalue = defaultvalue
         self.__valuerequired = valuerequired
         self.__allowedvalues = allowedvalues
+
+        if description is None:
+            description = self.name
+        self.__description = description
 
         if metadatakey is None:
             metadatakey = self.name
@@ -113,6 +121,15 @@ class Value():
         return self.__modelpath
     
     @property
+    def description(self) -> str:
+        """str: A short description of the value"""
+        return self.__description
+    
+    @description.setter
+    def description(self, val: str):
+        self.__description = str(val)
+
+    @property
     def queries(self) -> dict:
         """dict: The Query operations associated with this parameter"""
         return self.__queries
@@ -151,7 +168,7 @@ class Value():
 
     @property
     def _default_queries(self) -> dict:
-        """dict: Default query operations to associate with the Parameter style"""
+        """dict: Default query operations to associate with the Value style"""
         return {}
 
     def add_query(self,
@@ -265,7 +282,7 @@ class Value():
 
         try:
             val = self.load_model_value(model[path])
-        except KeyError:
+        except (KeyError, TypeError):
             val = self.defaultvalue
 
         if setvalue is True:

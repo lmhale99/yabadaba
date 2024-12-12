@@ -17,6 +17,7 @@ class FloatArrayValue(Value):
                  metadatakey: Union[str, bool, None] = False,
                  metadataparent: Optional[str] = None,
                  modelpath: Optional[str] = None,
+                 description: Optional[str] = None,
                  unit: Optional[str] = None):
         """
         Initialize an FloatArrayValue object for managing arrays of floats.
@@ -50,6 +51,9 @@ class FloatArrayValue(Value):
             The period-delimited path after the record root element for
             where the parameter will be found in the built data model.  If set
             to None (default) then name will be used for modelpath.
+        description: str or None, optional
+            A short description for the value.  If not given, then the record name
+            will be used.
         unit: str, optional
             The units to use when saving the value in a database.  A value of None
             (default) indicates that no unit conversions should be done.
@@ -67,7 +71,7 @@ class FloatArrayValue(Value):
         super().__init__(name, record, defaultvalue=defaultvalue,
                          valuerequired=valuerequired, allowedvalues=allowedvalues,
                          metadatakey=metadatakey, metadataparent=metadataparent,
-                         modelpath=modelpath)
+                         modelpath=modelpath, description=description)
         
     @property
     def unit(self) -> Optional[str]:

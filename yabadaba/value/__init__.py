@@ -34,6 +34,7 @@ def load_value(style: str,
                metadatakey: Union[str, bool, None] = None,
                metadataparent: Optional[str] = None,
                modelpath: Optional[str] = None,
+               description: Optional[str] = None,
                **kwargs) -> Value:
     """
     Loads a Value subclass associated with a given value style.
@@ -69,6 +70,9 @@ def load_value(style: str,
         The period-delimited path after the record root element for
         where the parameter will be found in the built data model.  If set
         to None (default) then name will be used for modelpath.
+    description: str or None, optional
+        A short description for the value.  If not given, then the record name
+        will be used.
     **kwargs : any, optional
         Any additional style-specific keyword parameters.
     """
@@ -78,4 +82,5 @@ def load_value(style: str,
                              allowedvalues=allowedvalues,
                              metadatakey=metadatakey,
                              metadataparent=metadataparent,
-                             modelpath=modelpath, **kwargs)
+                             modelpath=modelpath, 
+                             description=description, **kwargs)

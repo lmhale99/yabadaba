@@ -16,7 +16,8 @@ class IntArrayValue(Value):
                  allowedvalues: Optional[tuple] = None,
                  metadatakey: Union[str, bool, None] = False,
                  metadataparent: Optional[str] = None,
-                 modelpath: Optional[str] = None):
+                 modelpath: Optional[str] = None,
+                 description: Optional[str] = None):
         """
         Initialize an FloatArrayValue object for managing arrays of floats.
 
@@ -49,6 +50,9 @@ class IntArrayValue(Value):
             The period-delimited path after the record root element for
             where the parameter will be found in the built data model.  If set
             to None (default) then name will be used for modelpath.
+        description: str or None, optional
+            A short description for the value.  If not given, then the record name
+            will be used.
         """
         # Require metadatakey to be explicitly given
         if metadatakey is None:
@@ -61,7 +65,7 @@ class IntArrayValue(Value):
         super().__init__(name, record, defaultvalue=defaultvalue,
                          valuerequired=valuerequired, allowedvalues=allowedvalues,
                          metadatakey=metadatakey, metadataparent=metadataparent,
-                         modelpath=modelpath)
+                         modelpath=modelpath, description=description)
 
     def set_value_mod(self, val):
         if val is None:

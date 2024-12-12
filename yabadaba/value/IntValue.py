@@ -26,10 +26,13 @@ class IntValue(Value):
     @property
     def _default_queries(self) -> dict:
         """dict: Default query operations to associate with the Parameter style"""
-        return {
-            self.name: load_query('int_match',
-                                  name=self.metadatakey,
-                                  parent=self.metadataparent,
-                                  path=f'{self.record.modelroot}.{self.modelpath}',
-                                  description=f'Return only the records where {self.name} matches a given value')
-        }
+        if self.metadatakey is False:
+            return {}
+        else:
+            return {
+                self.name: load_query('int_match',
+                                    name=self.metadatakey,
+                                    parent=self.metadataparent,
+                                    path=f'{self.record.modelroot}.{self.modelpath}',
+                                    description=f'Return only the records where {self.description} matches a given value')
+            }

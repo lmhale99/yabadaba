@@ -16,10 +16,13 @@ class LongStrValue(Value):
     @property
     def _default_queries(self) -> dict:
         """dict: Default query operations to associate with the Parameter style"""
-        return {
-            self.name: load_query('str_contains',
-                                  name=self.metadatakey,
-                                  parent=self.metadataparent,
-                                  path=f'{self.record.modelroot}.{self.modelpath}',
-                                  description=f'Return only the records where {self.name} contains the given values')
-        }
+        if self.metadatakey is False:
+            return {}
+        else:
+            return {
+                self.name: load_query('str_contains',
+                                    name=self.metadatakey,
+                                    parent=self.metadataparent,
+                                    path=f'{self.record.modelroot}.{self.modelpath}',
+                                    description=f'Return only the records where {self.description} contains the given values')
+            }

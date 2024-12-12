@@ -17,6 +17,7 @@ class FloatValue(Value):
                  metadatakey: Union[str, bool, None] = None,
                  metadataparent: Optional[str] = None,
                  modelpath: Optional[str] = None,
+                 description: Optional[str] = None,
                  unit: Optional[str] = None):
         """
         Initialize a FloatValue object.
@@ -50,6 +51,9 @@ class FloatValue(Value):
             The period-delimited path after the record root element for
             where the parameter will be found in the built data model.  If set
             to None (default) then name will be used for modelpath.
+        description: str or None, optional
+            A short description for the value.  If not given, then the record name
+            will be used.
         unit: str, optional
             The units to use when saving the value in a database.  A value of None
             (default) indicates that no unit conversions should be done.
@@ -59,7 +63,7 @@ class FloatValue(Value):
         super().__init__(name, record, defaultvalue=defaultvalue,
                          valuerequired=valuerequired, allowedvalues=allowedvalues,
                          metadatakey=metadatakey, metadataparent=metadataparent,
-                         modelpath=modelpath)
+                         modelpath=modelpath, description=description)
         
     @property
     def unit(self) -> Optional[str]:
@@ -77,13 +81,16 @@ class FloatValue(Value):
     @property
     def _default_queries(self) -> dict:
         """dict: Default query operations to associate with the Parameter style"""
-        return {
-            self.name: load_query('float_match',
-                                  name=self.metadatakey,
-                                  parent=self.metadataparent,
-                                  path=f'{self.record.modelroot}.{self.modelpath}',
-                                  description=f'Return only the records where {self.name} matches a given value')
-        }
+        if self.metadatakey is False:
+            return {}
+        else:
+            return {
+                self.name: load_query('float_match',
+                                    name=self.metadatakey,
+                                    parent=self.metadataparent,
+                                    path=f'{self.record.modelroot}.{self.modelpath}',
+                                    description=f'Return only the records where {self.description} matches a given value')
+            }
     
     def build_model_value(self):
         if self.value is None:
