@@ -18,7 +18,8 @@ class RecordValue(Value):
                  allowedvalues: Optional[tuple] = None,
                  metadatakey: Union[str, bool, None] = None,
                  metadataparent: Optional[str] = None,
-                 modelpath: Optional[str] = None):
+                 modelpath: Optional[str] = None,
+                 description: Optional[str] = None):
         """
         Initialize a general Parameter object.
 
@@ -55,6 +56,9 @@ class RecordValue(Value):
             The period-delimited path after the record root element for
             where the parameter will be found in the built data model.  If set
             to None (default) then name will be used for modelpath.
+        description: str or None, optional
+            A short description for the value.  If not given, then the record name
+            will be used.
         """
         if issubclass(recordclass, Record):
             self.__recordclass = recordclass
@@ -67,7 +71,7 @@ class RecordValue(Value):
         super().__init__(name, record, defaultvalue=defaultvalue,
                          valuerequired=valuerequired, allowedvalues=allowedvalues,
                          metadatakey=metadatakey, metadataparent=metadataparent,
-                         modelpath=modelpath)
+                         modelpath=modelpath, description=description)
 
     @property
     def recordclass(self) -> type[Record]:
@@ -81,9 +85,10 @@ class RecordValue(Value):
     
     @property
     def _default_queries(self) -> dict:
-        """dict: Default query operations to associate with the Parameter style"""
-
-        if not hasattr(self, '__default_queries'):
+        """dict: Default query operations to associate with the Value style"""
+        if self.metadatakey is False:
+            return {}
+        elif not hasattr(self, '__default_queries'):
             self.__default_queries = {}
             for key, record_query in self.emptyrecord.queries.items():
                 if record_query.parent is not None:
