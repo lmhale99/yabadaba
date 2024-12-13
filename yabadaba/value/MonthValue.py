@@ -69,6 +69,10 @@ class MonthValue(Value):
         return f'--{self.value:02}'
 
     def set_value_mod(self, val):
+
+        # Check if value is in #text
+        val = self.set_value_mod_textfield(val)
+
         if val is None:
             return None
         

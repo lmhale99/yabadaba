@@ -151,7 +151,23 @@ class Value():
         self.__value = val
 
     def set_value_mod(self, val):
-        """Modifies values before setting them"""
+        """Modifies values before setting them"""            
+        return val
+
+    @staticmethod
+    def set_value_mod_textfield(val: Any) -> Any:
+        """
+        Utility method for use in set_value_mod that checks for the case where
+        a simple value is being set from its modelpath and that element may or
+        may not contain XML attributes. 
+        """
+        # Mod for reading model elements with attributes
+        if isinstance(val, dict):
+            if '#text' in val:
+                val = val['#text']
+            else:
+                return None
+            
         return val
 
     @property
@@ -256,8 +272,14 @@ class Value():
                 m[key] = DM()
             m = m[key]
         
-        # Insert the parameter's value into the model
-        dict_insert(m, path[-1], value, **kwargs)
+        # Check if target path exists and is a dict
+        if path[-1] in m and isinstance(m[path[-1]], dict):
+            # Insert the value as #text
+            dict_insert(m[path[-1]], '#text', value, **kwargs)
+
+        else:
+            # Insert the parameter's value into the model
+            dict_insert(m, path[-1], value, **kwargs)
 
 
     def build_model_value(self):

@@ -10,10 +10,14 @@ from . import Value
 class BoolValue(Value):
     
     def set_value_mod(self, val):
+        
+        # Check if value is in #text
+        val = self.set_value_mod_textfield(val)
+        
         # Pass Boolean values through without changing
         if val is True or val is False or val is None:
             return val
-        
+
         if isinstance(val, str):
             # Convert strings
             if val.lower() in ['true', 't']:

@@ -78,7 +78,7 @@ class FloatArrayValue(Value):
         """str or None: The units to use when saving the value to the model."""
         return self.__unit
 
-    def set_value_mod(self, val):
+    def set_value_mod(self, val):        
         if val is None:
             return None
         elif isinstance(val, str) and self.unit is not None:

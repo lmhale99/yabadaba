@@ -71,6 +71,10 @@ class FloatValue(Value):
         return self.__unit
 
     def set_value_mod(self, val):
+
+        # Check if value is in #text
+        val = self.set_value_mod_textfield(val)
+
         if val is None:
             return None
         elif isinstance(val, str) and self.unit is not None:

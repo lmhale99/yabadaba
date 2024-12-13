@@ -8,10 +8,15 @@ from . import Value
 class StrValue(Value):
     
     def set_value_mod(self, val):
+        
+        # Check if value is in #text
+        val = self.set_value_mod_textfield(val)
+        
+        # Pass None values through
         if val is None:
             return None
-        else:
-            return str(val)
+            
+        return str(val)
     
     @property
     def _default_queries(self) -> dict:

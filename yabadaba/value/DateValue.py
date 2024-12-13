@@ -11,6 +11,10 @@ from . import Value
 class DateValue(Value):
     
     def set_value_mod(self, val):
+        
+        # Check if value is in #text
+        val = self.set_value_mod_textfield(val)
+        
         if val is None:
             val = datetime.date.today()
         elif not isinstance(val, datetime.date):
