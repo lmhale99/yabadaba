@@ -1,6 +1,24 @@
 Updates
 =======
 
+0.3.0
+-----
+- Value objects have been added that greatly reduce the amount of coding needed
+  to define a record as data transformation and interaction methods can now be
+  auto-built using the defined Values.  Extensive code updates integrating
+  the Value objects into the package and defining all the fancy magical stuff
+  that happens.
+- DummyQuery added that returns True or False by comparing a given value to a
+  set constant value rather than performing a query.  Useful if the same query
+  operations are allowed on multiple schemas where the term being queried is
+  not a variable in all schemas.
+- Record.display_image() added that will access an image file from the record's
+  tar and display it.
+- The demo has been moved to yabadaba_demo to avoid code pollution in the main 
+  package.
+- Probably other changes and bug fixes, but not sure which are fixes to the old
+  code and what are associated with the major Value object overhaul. 
+
 0.2.2
 -----
 
