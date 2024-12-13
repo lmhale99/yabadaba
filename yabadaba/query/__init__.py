@@ -6,7 +6,6 @@ from typing import Optional
 
 
 # Relative imports
-#from . import str_contains, str_match, in_list, int_match, list_contains, date_match, float_match
 from .Query import Query
 
 # Initialize a ModuleManager for the query styles
@@ -14,12 +13,15 @@ from ..tools import ModuleManager
 querymanager = ModuleManager('Query')
 
 # Add the modular Query styles (future)
+querymanager.import_style('bool_match', '.BoolMatchQuery', __name__)
 querymanager.import_style('str_contains', '.StrContainsQuery', __name__)
 querymanager.import_style('str_match', '.StrMatchQuery', __name__)
 querymanager.import_style('list_contains', '.ListContainsQuery', __name__)
 querymanager.import_style('int_match', '.IntMatchQuery', __name__)
 querymanager.import_style('float_match', '.FloatMatchQuery', __name__)
 querymanager.import_style('date_match', '.DateMatchQuery', __name__)
+querymanager.import_style('month_match', '.MonthMatchQuery', __name__)
+querymanager.import_style('dummy', '.DummyQuery', __name__)
 
 def load_query(style: str,
                name: Optional[str] = None,

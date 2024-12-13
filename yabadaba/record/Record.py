@@ -2,12 +2,14 @@
 # Standard Python libraries
 from pathlib import Path
 from importlib import resources
-from typing import Union, Optional
+from typing import Union, Optional, Any
 import io
 from tarfile import TarFile
 
 # https://ipython.org/
 from IPython.display import display, HTML
+
+from PIL import Image
 
 # https://lxml.de/
 import lxml.etree as ET
@@ -17,7 +19,7 @@ import pandas as pd
 # https://github.com/usnistgov/DataModelDict
 from DataModelDict import DataModelDict as DM
 
-from .. import load_query
+from .. import load_query, load_value
 
 class Record():
     """
@@ -29,6 +31,7 @@ class Record():
                  model: Union[str, io.IOBase, DM, None] = None,
                  name: Optional[str] = None,
                  database = None,
+                 noname: bool = False,
                  **kwargs: any):
         """
         Initializes a Record object for a given style.
@@ -53,12 +56,125 @@ class Record():
         self.__name = None
         self.tar = None
         self.database = database
+        self.noname = noname
+
+        self.__value_objects = None
+        self.__value_objects = tuple(self._init_value_objects())
+        self._init_value_dict()
+        if len(self.__value_dict) > 0:
+            if len(self.value_objects) > 0:
+                raise ValueError('Value objects should not be set using both _init_value_objects and _init_value_dict')
+            self.__value_objects = tuple(self.__value_dict.values())
 
         if model is not None:
             assert len(kwargs) == 0, f"cannot specify kwargs with model: '{kwargs.keys()}'"
             self.load_model(model, name=name)
         else:
             self.set_values(name=name, **kwargs)
+
+    def _init_value_objects(self) -> list:
+        """
+        Method that defines the value objects for the Record.  This should
+        1. Call the method's super().
+        2. Use yabadaba.load_value() to build Value objects that are set to
+           private attributes of self.
+        3. Append the list returned by the super() with the new Value objects.
+
+        Returns
+        -------
+        value_objects: A list of all value objects.
+        """
+        if self.__value_objects is not None:
+            raise RuntimeError('_init_value_objects should only be called by Record.__init__')
+
+        return []
+
+    def _init_value_dict(self):
+        """
+        Method that defines the value objects for the Record.  This should
+        call the super of this method, then use self._add_value to create new Value objects.
+        Note that the order values are defined matters
+        when build_model is called!!!
+        """
+        pass
+
+    def _add_value(self,
+                   style: str,
+                   name: str,
+                   defaultvalue: Optional[Any] = None,
+                   valuerequired: bool = False,
+                   allowedvalues: Optional[tuple] = None,
+                   metadatakey: Union[str, bool, None] = None,
+                   metadataparent: Optional[str] = None,
+                   modelpath: Optional[str] = None,
+                   description: Optional[str] = None,
+                   **kwargs):
+        """
+        Method to add Value objects when defining the class.  This should only be
+        used when defining _init_value_dict()!
+
+        Parameters
+        ----------
+        style : str
+            The value style.
+        name : str
+            The name for the parameter value.  This corresponds to the name of
+            the associated class attribute.
+        defaultvalue : any or None, optional
+            The default value to use for the property.  The default value of
+            None indicates that there is no default value.
+        valuerequired: bool, optional
+            Indicates if a value must be given for the property.  If True, then
+            checks will be performed that a value is assigned to the property.
+        allowedvalues : tuple or None, optional
+            A list/tuple of values that the parameter is restricted to have.
+            Setting this to None (default) indicates any value is allowed.
+        metadatakey: str, bool or None, optional
+            The key name to use for the property when constructing the record
+            metadata dict.  If set to None (default) then name will be used for
+            metadatakey.  If set to False then the parameter will not be
+            included in the metadata dict.
+        metadataparent: str or None, optional
+            If given, then this indicates that the metadatakey is actually an
+            element of a dict in metadata with this name.  This allows for limited
+            support for metadata having embedded dicts.
+        modelpath: str, optional
+            The period-delimited path after the record root element for
+            where the parameter will be found in the built data model.  If set
+            to None (default) then name will be used for modelpath.
+        description: str or None, optional
+            A short description for the value.  If not given, then the record name
+            will be used.
+        **kwargs : any, optional
+            Any additional style-specific keyword parameters.
+        """
+        self.__value_dict[name] = load_value(style=style, name=name, record=self,
+                                             defaultvalue=defaultvalue,
+                                             valuerequired=valuerequired,
+                                             allowedvalues=allowedvalues,
+                                             metadatakey=metadatakey,
+                                             metadataparent=metadataparent,
+                                             modelpath=modelpath,
+                                             description=description,
+                                             **kwargs)
+
+    def __getattr__(self, name: str):
+        """Adjusted to get value attributes from Value objects"""
+        if name == '_Record__value_dict':
+            self.__value_dict = {}
+            return self.__value_dict
+        if name in self.__value_dict:
+            return self.__value_dict[name].value
+    
+    def __setattr__(self, name: str, value: Any):
+        """Adjusted to set to value attributes of Value objects"""
+        if name == '_Record__value_dict':
+            super().__setattr__(name, value)
+        elif name in self.__value_dict:
+            self.__value_dict[name].value = value
+        else:
+            super().__setattr__(name, value)
+
 
     def load_model(self,
                    model: Union[str, io.IOBase, DM],
@@ -84,21 +200,43 @@ class Record():
         else:
             self.name = name
 
+        # Read/set model
         self._set_model(model)
 
-    def set_values(self, name: Optional[str] = None):
+        # Extract parameter values 
+        rec = self.model[self.modelroot]
+        for value_object in self.value_objects:
+            value_object.load_model(rec)
+
+        if self.noname is False:
+            try:
+                self.name
+            except:
+                if self.defaultname is not None:
+                    self.name = self.defaultname
+
+    def set_values(self, **kwargs):
         """
         Set multiple object attributes at the same time.
 
         Parameters
         ----------
-        name : str, optional
-            The name to assign to the record.  Often inferred from other
-            attributes if not given.
+        **kwargs: any
+            Any parameters for the record that you wish to set values for.
         """
-        # Set name if given
-        if name is not None:
-            self.name = name
+        if 'name' in kwargs:
+            self.name = kwargs['name']
+        
+        for value_object in self.value_objects:
+            if value_object.name in kwargs:
+                setattr(self, value_object.name, kwargs[value_object.name])
+
+        if self.noname is False:
+            try:
+                self.name
+            except:
+                if self.defaultname is not None:
+                    self.name = self.defaultname
 
     def __str__(self) -> str:
         """str: The string representation of the record"""
@@ -132,7 +270,7 @@ class Record():
     @property
     def name(self) -> str:
         """str: The record's name."""
-        if self.__name is not None:
+        if self.__name is not None or self.noname:
             return self.__name
         else:
             raise AttributeError('record name not set')
@@ -140,9 +278,32 @@ class Record():
     @name.setter
     def name(self, value: Optional[str]):
         if value is not None:
+            if self.noname:
+                raise TypeError('name turned off for this record')
             self.__name = str(value)
         else:
             self.__name = None
+
+    @property
+    def defaultname(self) -> Optional[str]:
+        """str: The name to default to, usually based on other properties"""
+        return None
+
+    @property
+    def noname(self) -> bool:
+        """bool: Indicates that the record should not have a name."""
+        return self.__noname
+
+    @noname.setter
+    def noname(self, val: bool):
+        if not isinstance(val, bool):
+            raise TypeError('noname must be a bool')
+        self.__noname = val
+
+    @property
+    def value_objects(self) -> tuple:
+        """tuple: The Value objects associated with the Record"""
+        return self.__value_objects
 
     @property
     def modelroot(self) -> str:
@@ -182,7 +343,13 @@ class Record():
         """
         Generates and returns model content based on the values set to object.
         """
-        raise NotImplementedError('Not defined for this class')
+        self.__model = DM()
+        self.__model[self.modelroot] = rec = DM()
+
+        for value_object in self.value_objects:
+            value_object.build_model(rec)        
+
+        return self.__model
 
     def metadata(self) -> dict:
         """
@@ -190,12 +357,43 @@ class Record():
         Useful for quickly comparing records and for building pandas.DataFrames
         for multiple records of the same style.
         """
-        return {}
+        meta = {}
+        # Initialize with only name
+        if self.noname is False:
+            meta['name'] = self.name
+
+        # Add value object values
+        for value_object in self.value_objects:
+            value_object.metadata(meta)
+        
+        return meta
+
+    @property
+    def metadatakeys(self) -> list:
+        """list: The keys included in the metadata dict"""
+        keys = []
+        if self.noname is False:
+            keys.append('name')
+        
+        # Add value object values
+        for value_object in self.value_objects:
+            if value_object.metadataparent is not None:
+                keys.append(value_object.metadataparent)
+            elif value_object.metadatakey is not False:
+                keys.append(value_object.metadatakey)
+        
+        return keys
 
     @property
     def queries(self) -> dict:
         """dict: Query objects and their associated parameter names."""
-        return {}
+        
+        # Build dict containing all queries of all values
+        queries = {}
+        for value_object in self.value_objects:
+            queries.update(value_object.queries)
+        
+        return queries
 
     @property
     def querynames(self) -> list:
@@ -236,7 +434,10 @@ class Record():
         queries = self.queries
 
         # Query name
-        matches = load_query('str_match', name='name').pandas(dataframe, name)
+        if self.noname is False:
+            matches = load_query('str_match', name='name').pandas(dataframe, name)
+        elif name is not None:
+            raise ValueError('name turned off for record')
 
         # Apply queries based on given kwargs
         for key in kwargs:
@@ -270,7 +471,10 @@ class Record():
         querydict['$and'] = querylist = [{}]
 
         # Query name
-        load_query('str_match', path='name').mongo(querylist, name)
+        if self.noname is False:
+            load_query('str_match', path='name').mongo(querylist, name)
+        elif name is not None:
+            raise ValueError('name turned off for record')
 
         # Apply queries based on given kwargs
         for key in kwargs:
@@ -412,9 +616,65 @@ class Record():
 
     def get_file(self,
                  filename: Union[str, Path],
-                 localroot: Union[str, Path, None] = None):
+                 localroot: Union[str, Path, None] = None,
+                 local: bool = True):
         """
         Retrieves a file either locally or from the record's tar archive.
+
+        Parameters
+        ----------
+        filename : str or Path
+            The name/path for the file.  For local files, this is taken
+            relative to localroot.  For files in the tar archive, this is taken
+            relative to the tar's root directory which is always named for the
+            record, i.e., {self.name}/{filename}.
+        localroot : str, Path or None, optional
+            The local root directory that filename (if it exists) is relative
+            to.  The default value of None will use the current working
+            directory.
+        local : bool, optional
+            If True (default) then the localroot will be checked for the file
+            prior to retrieving the file from the tar.  If False then only the
+            tar will be checked.
+        
+        Raises
+        ------
+        ValueError
+            If filename exists in the tar but is not a file.
+
+        Returns
+        -------
+        io.IOBase
+            A file-like object in binary read mode that allows for the file
+            contents to be read.
+        """
+        if local:
+            # Set default root path
+            if localroot is None:
+                localroot = Path.cwd()
+            else:
+                localroot = Path(localroot)
+
+            # Return local copy of file if it exists
+            localfile = Path(localroot, filename)
+            if Path(localfile).is_file():
+                return open(localfile, 'rb')
+
+        # Return file extracted from tar
+        fileio = self.tar.extractfile(f'{self.name}/{filename}')
+        if fileio is not None:
+            return fileio
+        else:
+            raise ValueError(f'{filename} exists in tar, but is not a file')
+
+    def display_image(self,
+                      filename: Union[str, Path],
+                      localroot: Union[str, Path, None] = None,
+                      width: Optional[int] = None,
+                      height: Optional[int] = None):
+        """
+        For IPython-based environments, this retrieves an image file either
+        locally or from within the record's tar archive and displays it.
 
         Parameters
         ----------
@@ -432,27 +692,21 @@ class Record():
         ------
         ValueError
             If filename exists in the tar but is not a file.
-
-        Returns
-        -------
-        io.IOBase
-            A file-like object in binary read mode that allows for the file
-            contents to be read.
         """
-        # Set default root path
-        if localroot is None:
-            localroot = Path.cwd()
-        else:
-            localroot = Path(localroot)
+        fileio = self.get_file(filename=filename, localroot=localroot)
+        img = Image.open(fileio)
 
-        # Return local copy of file if it exists
-        localfile = Path(localroot, filename)
-        if Path(localfile).is_file():
-            return open(localfile, 'rb')
+        if width is not None:
+            if height is None:
+                oldwidth, oldheight = img.size
+                height = round(oldheight * (width / oldwidth))
+            size = (width, height)
+            img = img.resize(size)
 
-        # Return file extracted from tar
-        fileio = self.tar.extractfile(f'{self.name}/{filename}')
-        if fileio is not None:
-            return fileio
-        else:
-            raise ValueError(f'{filename} exists in tar, but is not a file')
+        elif height is not None:
+            oldwidth, oldheight = img.size
+            width = round(oldwidth * (height / oldheight))
+            size = (width, height)
+            img = img.resize(size)
+
+        display(img)

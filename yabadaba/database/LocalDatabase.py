@@ -117,6 +117,7 @@ class LocalDatabase(Database):
             def toint(column):
                 """Convert int columns as needed"""
                 try:
+                    assert column.dtype == float
                     newcolumn = column.astype(int)
                     assert np.allclose(column, newcolumn)
                 except:
@@ -129,10 +130,14 @@ class LocalDatabase(Database):
                 cache = cache.apply(toint, axis=0)
                 for key in cache.keys():
                     cache[key] = cache.apply(interpret, axis=1, args=[key])
+            else:
+                r = load_record(style)
+                cache = pd.DataFrame(columns=r.metadatakeys)
 
         else:
             # Initialize new cache
-            cache = pd.DataFrame({'name':[]})
+            r = load_record(style)
+            cache = pd.DataFrame(columns=r.metadatakeys)
 
         if addnew is True:
 
@@ -150,7 +155,10 @@ class LocalDatabase(Database):
                     record = load_record(style, model=fname, name=name)
                     newrecords.append(record.metadata())
                 newrecords = pd.DataFrame(newrecords)
-                cache = pd.concat([cache, newrecords], sort=False).sort_values('name')
+                if not cache.empty:
+                    cache = pd.concat([cache, newrecords], sort=False).sort_values('name')
+                else:
+                    cache = newrecords.sort_values('name')
                 refresh = True
 
             # Delete missing entries
@@ -197,6 +205,10 @@ class LocalDatabase(Database):
             The corresponding metadata values for the records.  Only returned
             if return_df is True.
         """
+        # Set default search parameters
+        if style is None:
+            style = self.select_record_style()
+
         # Get df
         df = self.get_records_df(style, refresh_cache=refresh_cache, **kwargs)
 
@@ -256,7 +268,9 @@ class LocalDatabase(Database):
 
             # Build cache DataFrame
             if len(cache) == 0:
-                cache = pd.DataFrame({'name':[]})
+                # Initialize new cache
+                r = load_record(style)
+                cache = pd.DataFrame(columns=r.metadatakeys)
             else:
                 cache = pd.DataFrame(cache)
 

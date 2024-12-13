@@ -138,4 +138,4 @@ class StrContainsQuery(Query):
                 return False
 
         # Use apply_function on df using value and object attributes
-        return df.apply(apply_function, axis=1, args=(self.name, value, self.parent))
+        return df.apply(apply_function, axis=1, args=(self.name, value, self.parent)).astype(bool)

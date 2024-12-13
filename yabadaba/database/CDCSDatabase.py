@@ -164,7 +164,8 @@ class CDCSDatabase(Database):
                 df.append(record.metadata())
             df = pd.DataFrame(df)
         else:
-            df = pd.DataFrame({'name':[]})
+            r = load_record(style)
+            df = pd.DataFrame(columns=r.metadatakeys)
 
         # Sort by name
         df = df.sort_values('name')

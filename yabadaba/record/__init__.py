@@ -7,6 +7,7 @@ from typing import Optional, Union
 from DataModelDict import DataModelDict as DM
 
 # Relative imports
+from .. import valuemanager
 from .Record import Record
 from ..tools import ModuleManager
 
@@ -44,3 +45,7 @@ def load_record(style: str,
     if database is not None:
         record.database = database
     return record
+
+
+# Append RecordValue to valuemanager
+valuemanager.import_style('record', '.RecordValue', __name__)

@@ -158,4 +158,4 @@ class Query():
             Boolean map of matching values
         """
         # Do nothing - base class
-        return df.apply(lambda series:True, axis=1)
+        return df.apply(lambda series:True, axis=1).astype(bool)

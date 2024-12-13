@@ -122,10 +122,10 @@ class ListContainsQuery(Query):
                 for child in iaslist(series[parent]):
 
                     # Check if child element has name
-                    if name in child and isinstance(series[name], list):
+                    if name in child and isinstance(child[name], list):
                         match = True
 
-                    # Check if all values are in child[name]
+                        # Check if all values are in child[name]
                         for v in iaslist(value):
                             if v not in child[name]:
                                 match = False
@@ -136,4 +136,4 @@ class ListContainsQuery(Query):
                 return False
 
         # Use apply_function on df using value and object attributes
-        return df.apply(apply_function, axis=1, args=(self.name, value, self.parent))
+        return df.apply(apply_function, axis=1, args=(self.name, value, self.parent)).astype(bool)
