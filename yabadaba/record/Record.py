@@ -175,8 +175,6 @@ class Record():
         if name == '_Record__value_dict' or name.startswith('__'):
             super().__setattr__(name, value)
         elif name in self.__value_dict:
-            if self.__value_dict[name].settable is False:
-                raise AttributeError(f'record term {name} cannot be set')
             self.__value_dict[name].value = value
         else:
             super().__setattr__(name, value)
