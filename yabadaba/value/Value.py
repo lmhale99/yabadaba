@@ -17,6 +17,7 @@ class Value():
                  metadatakey: Union[str, bool, None] = None,
                  metadataparent: Optional[str] = None,
                  modelpath: Optional[str] = None,
+                 settable: Optional[bool] = None,
                  description: Optional[str] = None):
         """
         Initialize a Value object.
@@ -50,6 +51,10 @@ class Value():
             The period-delimited path after the record root element for
             where the parameter will be found in the built data model.  If set
             to None (default) then name will be used for modelpath.
+        settable: bool or None, optional
+            Indicates if the value can be set using the class attribute.
+            If None, then will default to the default_settable value of the Value
+            class.
         description: str or None, optional
             A short description for the value.  If not given, then the record name
             will be used.
@@ -60,6 +65,7 @@ class Value():
         self.__defaultvalue = defaultvalue
         self.__valuerequired = valuerequired
         self.__allowedvalues = allowedvalues
+        self.__settable = settable
 
         if description is None:
             description = self.name
@@ -120,6 +126,26 @@ class Value():
         """str: The period-delimited path after the root element where the parameter is stored in a data model"""
         return self.__modelpath
     
+    @property
+    def settable(self) -> bool:
+        """bool: Indicates if the value can be set using the Python class attribute"""
+        return self.__settable
+    
+    @settable.setter
+    def settable(self, val: Optional[bool]):
+        if val is None:
+            val = self._settable_default
+        
+        if not isinstance(val, bool):
+            raise TypeError('settable must be bool')
+        
+        self.__settable = val
+
+    @property
+    def _settable_default(self) -> bool:
+        """The default value to use for the settable option"""
+        return True
+
     @property
     def description(self) -> str:
         """str: A short description of the value"""
