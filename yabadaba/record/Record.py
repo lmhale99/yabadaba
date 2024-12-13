@@ -2,7 +2,7 @@
 # Standard Python libraries
 from pathlib import Path
 from importlib import resources
-from typing import Union, Optional
+from typing import Union, Optional, Any
 import io
 from tarfile import TarFile
 
@@ -19,7 +19,7 @@ import pandas as pd
 # https://github.com/usnistgov/DataModelDict
 from DataModelDict import DataModelDict as DM
 
-from .. import load_query
+from .. import load_query, load_value
 
 class Record():
     """
@@ -32,7 +32,6 @@ class Record():
                  name: Optional[str] = None,
                  database = None,
                  noname: bool = False,
-                 value_objects = None,
                  **kwargs: any):
         """
         Initializes a Record object for a given style.
@@ -61,6 +60,11 @@ class Record():
 
         self.__value_objects = None
         self.__value_objects = tuple(self._init_value_objects())
+        self._init_value_dict()
+        if len(self.__value_dict) > 0:
+            if len(self.value_objects) > 0:
+                raise ValueError('Value objects should not be set using both _init_value_objects and _init_value_dict')
+            self.__value_objects = tuple(self.__value_dict.values())
 
         if model is not None:
             assert len(kwargs) == 0, f"cannot specify kwargs with model: '{kwargs.keys()}'"
@@ -84,6 +88,93 @@ class Record():
             raise RuntimeError('_init_value_objects should only be called by Record.__init__')
 
         return []
+
+    def _init_value_dict(self):
+        """
+        Method that defines the value objects for the Record.  This should
+        call the super of this method, then use self._add_value to create new Value objects.
+        Note that the order values are defined matters
+        when build_model is called!!!
+        """
+        pass
+
+    def _add_value(self,
+                   style: str,
+                   name: str,
+                   defaultvalue: Optional[Any] = None,
+                   valuerequired: bool = False,
+                   allowedvalues: Optional[tuple] = None,
+                   metadatakey: Union[str, bool, None] = None,
+                   metadataparent: Optional[str] = None,
+                   modelpath: Optional[str] = None,
+                   description: Optional[str] = None,
+                   **kwargs):
+        """
+        Method to add Value objects when defining the class.  This should only be
+        used when defining _init_value_dict()!
+
+        Parameters
+        ----------
+        style : str
+            The value style.
+        name : str
+            The name for the parameter value.  This corresponds to the name of
+            the associated class attribute.
+        defaultvalue : any or None, optional
+            The default value to use for the property.  The default value of
+            None indicates that there is no default value.
+        valuerequired: bool, optional
+            Indicates if a value must be given for the property.  If True, then
+            checks will be performed that a value is assigned to the property.
+        allowedvalues : tuple or None, optional
+            A list/tuple of values that the parameter is restricted to have.
+            Setting this to None (default) indicates any value is allowed.
+        metadatakey: str, bool or None, optional
+            The key name to use for the property when constructing the record
+            metadata dict.  If set to None (default) then name will be used for
+            metadatakey.  If set to False then the parameter will not be
+            included in the metadata dict.
+        metadataparent: str or None, optional
+            If given, then this indicates that the metadatakey is actually an
+            element of a dict in metadata with this name.  This allows for limited
+            support for metadata having embedded dicts.
+        modelpath: str, optional
+            The period-delimited path after the record root element for
+            where the parameter will be found in the built data model.  If set
+            to None (default) then name will be used for modelpath.
+        description: str or None, optional
+            A short description for the value.  If not given, then the record name
+            will be used.
+        **kwargs : any, optional
+            Any additional style-specific keyword parameters.
+        """
+        self.__value_dict[name] = load_value(style=style, name=name, record=self,
+                                             defaultvalue=defaultvalue,
+                                             valuerequired=valuerequired,
+                                             allowedvalues=allowedvalues,
+                                             metadatakey=metadatakey,
+                                             metadataparent=metadataparent,
+                                             modelpath=modelpath,
+                                             description=description,
+                                             **kwargs)
+
+    def __getattr__(self, name: str):
+        """Adjusted to get value attributes from Value objects"""
+        if name == '_Record__value_dict':
+            self.__value_dict = {}
+            return self.__value_dict
+        if name in self.__value_dict:
+            return self.__value_dict[name].value
+    
+    def __setattr__(self, name: str, value: Any):
+        """Adjusted to set to value attributes of Value objects"""
+        if name == '_Record__value_dict':
+            super().__setattr__(name, value)
+        elif name in self.__value_dict:
+            self.__value_dict[name].value = value
+        else:
+            super().__setattr__(name, value)
+
 
     def load_model(self,
                    model: Union[str, io.IOBase, DM],
