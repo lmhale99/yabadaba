@@ -160,17 +160,23 @@ class Record():
 
     def __getattr__(self, name: str):
         """Adjusted to get value attributes from Value objects"""
-        if name == '_Record__value_dict':
+        if name.startswith('__'):
+            super().__getattr__(self, name)
+
+        elif name == '_Record__value_dict':
             self.__value_dict = {}
             return self.__value_dict
-        if name in self.__value_dict:
+        
+        elif name in self.__value_dict:
             return self.__value_dict[name].value
     
     def __setattr__(self, name: str, value: Any):
         """Adjusted to set to value attributes of Value objects"""
-        if name == '_Record__value_dict':
+        if name == '_Record__value_dict' or name.startswith('__'):
             super().__setattr__(name, value)
         elif name in self.__value_dict:
+            if self.__value_dict[name].settable is False:
+                raise AttributeError(f'record term {name} cannot be set')
             self.__value_dict[name].value = value
         else:
             super().__setattr__(name, value)
