@@ -119,7 +119,7 @@ class LocalDatabase(Database):
                 try:
                     assert column.dtype == float
                     newcolumn = column.astype(int)
-                    assert np.allclose(column, newcolumn)
+                    assert np.allclose(column, newcolumn, atol=0.0)
                 except:
                     return column
                 else:
