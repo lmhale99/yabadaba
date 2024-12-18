@@ -60,7 +60,7 @@ class Record():
 
         self.__value_objects = None
         self.__value_objects = tuple(self._init_value_objects())
-        self._init_value_dict()
+        self._init_values()
         if len(self.__value_dict) > 0:
             if len(self.value_objects) > 0:
                 raise ValueError('Value objects should not be set using both _init_value_objects and _init_value_dict')
@@ -89,7 +89,7 @@ class Record():
 
         return []
 
-    def _init_value_dict(self):
+    def _init_values(self):
         """
         Method that defines the value objects for the Record.  This should
         call the super of this method, then use self._add_value to create new Value objects.
@@ -111,7 +111,7 @@ class Record():
                    **kwargs):
         """
         Method to add Value objects when defining the class.  This should only be
-        used when defining _init_value_dict()!
+        used when defining _init_values()!
 
         Parameters
         ----------

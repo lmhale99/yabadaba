@@ -49,3 +49,5 @@ def load_record(style: str,
 
 # Append RecordValue to valuemanager
 valuemanager.import_style('record', '.RecordValue', __name__)
+
+
