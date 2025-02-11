@@ -49,6 +49,10 @@ class Record():
             Database that the Record was obtained from.  Can allow for Record
             methods to perform Database operations without needing to specify
             which Database to use.
+        nonoame : bool, optional
+            Flag indicating if the record does not get assigned a name.  This
+            is primarily for when a record class is used as a value inside
+            another class, i.e., this record is a subset of another.
         kwargs : any
             Any record-specific attributes to assign.
         """
@@ -308,6 +312,10 @@ class Record():
     def value_objects(self) -> tuple:
         """tuple: The Value objects associated with the Record"""
         return self.__value_objects
+
+    def get_value(self, name):
+        """Returns a Value object from __value_dict by name"""
+        return self.__value_dict[name]
 
     @property
     def modelroot(self) -> str:
