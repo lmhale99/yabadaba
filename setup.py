@@ -42,6 +42,7 @@ setup(name = 'yabadaba',
         'cdcs>=0.2.3',
         'pymongo',
         'tqdm',
+        'pillow'
       ],
       package_data={'': ['*']},
       zip_safe = False)
