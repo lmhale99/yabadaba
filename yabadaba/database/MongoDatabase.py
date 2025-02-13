@@ -15,6 +15,7 @@ import pandas as pd
 # https://api.mongodb.com/python/current/
 import pymongo
 from pymongo import MongoClient
+from pymongo.database import Database as pymongo_Database
 from gridfs import GridFS
 
 # https://github.com/usnistgov/DataModelDict
@@ -65,8 +66,8 @@ class MongoDatabase(Database):
         return 'mongo'
 
     @property
-    def mongodb(self) -> pymongo.database.Database:
-        """pymongo.Database : The underlying database API object."""
+    def mongodb(self) -> pymongo_Database:
+        """pymongo.database.Database : The underlying database API object."""
         return self.__mongodb
 
     def get_records(self,
