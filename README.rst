@@ -41,12 +41,12 @@ yadabada-based packages to build upon yabadaba in a modular fashion.
 
 The core base classes defined by yabadaba are
 
-- __Database__ defines common method calls for interacting with the 
+- **Database** defines common method calls for interacting with the 
   records in a database, such as querying, adding, modifying, and deleting
   entries.  Child classes of Database are then defined that implement the
   universal interaction methods for a given database infrastructure.
 
-- __Record__ defines methods that allow for the interpretation and
+- **Record** defines methods that allow for the interpretation and
   transformation of a single database entry of a given schema to/from different
   data representations.  Notably, the record interprets the data into python
   values and objects that are easy for users to interact with while also making
@@ -58,7 +58,7 @@ The core base classes defined by yabadaba are
   data and you simply allow it to inherit from the base Record class to
   provide the framework for saving and loading the content.
 
-- __Value__ defines methods that allow for the interpretation and
+- **Value** defines methods that allow for the interpretation and
   transformation of the component values contained within a record.  Child
   classes of Value specify how to perform those operations for different
   data types and structures, and can specify one or more default query
@@ -66,27 +66,27 @@ The core base classes defined by yabadaba are
   Value objects providing a schema for the data and the basis for performing
   the data transformations.
 
-- __Query__ defines methods that build database query operations for the
+- **Query** defines methods that build database query operations for the
   different database infrastructures.  The child classes of Query focus on one
   specific query operation and define different methods to efficiently perform
   that operation in the different database infrastructures.  Query objects are
   typically associated with Value objects to specify how to query based on the
   values of specific elements in a Record.
 
-- __ModuleManager__ provides a common interface for managing the various
+- **ModuleManager** provides a common interface for managing the various
   subclasses of Database, Record, Value, and Query in a modular way.  The
   ModuleManager objects dynamically import the subclasses such that they are
   fully integrated with each other and the features of yabadaba.  Packages that
   build on yabadaba can then add their own subclasses to the managers and take
   advantage of yabadaba's capabilities.
 
-- __Settings__ provides a means of saving and loading settings across different
+- **Settings** provides a means of saving and loading settings across different
   python settings.  Primarily, this is used to store database access and
   authentication information for databases that are frequently used.  This
   class can easily be extended to manage other settings for yadabada-based
   projects.
 
-- __UnitConverter__ provides simple tools for managing unit conversions.
+- **UnitConverter** provides simple tools for managing unit conversions.
 
 Installation
 ------------
@@ -95,7 +95,8 @@ The yabadaba package can easily be installed using pip or conda-forge
 
     pip install yabadaba
 
-or 
+or
+
     conda install -c conda-forge yabadaba
 
 Documentation
