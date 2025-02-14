@@ -14,7 +14,9 @@ Updates
   not a variable in all schemas.
 - Record.display_image() added that will access an image file from the record's
   tar and display it.
-- The demo has been moved to yabadaba_demo to avoid code pollution in the main 
+- The code in yabadaba.demo has been moved from yabadaba into doc to avoid code
+  pollution in the main package.
+- All docs have been created and updated describing the new version of the
   package.
 - Probably other changes and bug fixes, but not sure which are fixes to the old
   code and what are associated with the major Value object overhaul. 
@@ -31,7 +33,6 @@ Updates
 - Bug fix with get_tar() that now correctly returns tar contents.
 - Depreciation fixes for IPython and pandas.
 - Typing should be added to all method headers.
-
 
 0.2.1
 -----
