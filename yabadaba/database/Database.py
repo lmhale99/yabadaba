@@ -575,7 +575,8 @@ class Database():
 
     def destroy_records(self,
                         record_style: Optional[str] = None,
-                        records: Optional[list] = None):
+                        records: Optional[list] = None,
+                        prompt: bool = True):
         """
         Permanently deletes multiple records and their associated tars all at
         once.
@@ -588,7 +589,11 @@ class Database():
             the available record styles will be listed and the user prompted
             to pick one.
         records : list, optional
-            A list of pre-selected records to delete. 
+            A list of pre-selected records to delete.
+        prompt : bool, optional
+            If True (default) a prompt will ask if you are certain you want
+            to destroy the matching records.  Only set to False if you are
+            absolutely sure your code is deleting the correct records.
         """
         # Select record_style if needed
         if record_style is None and records is None:
@@ -609,7 +614,11 @@ class Database():
         print(f'{len(records)} records found to be destroyed')
 
         if len(records) > 0:
-            test = screen_input('Delete records? (must type yes):')
+            if prompt:
+                test = screen_input('Delete records? (must type yes):')
+            else:
+                test = 'yes'
+            
             if test == 'yes':
                 count = 0
                 record_styles = set()
