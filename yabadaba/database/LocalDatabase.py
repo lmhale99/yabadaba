@@ -438,6 +438,7 @@ class LocalDatabase(Database):
         try:
             assert build is False
             model = record.model
+            assert model is not None
         except:
             model = record.build_model()
 
@@ -524,6 +525,7 @@ class LocalDatabase(Database):
         try:
             assert build is False
             model = record.model
+            assert model is not None
         except:
             model = record.build_model()
 
