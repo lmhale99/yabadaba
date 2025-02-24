@@ -39,7 +39,7 @@ setup(name = 'yabadaba',
         'IPython',
         'numpy', 
         'pandas',
-        'cdcs>=0.2.3',
+        'cdcs>=0.2.4',
         'pymongo',
         'tqdm',
         'pillow'
