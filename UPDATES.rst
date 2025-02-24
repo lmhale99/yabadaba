@@ -1,5 +1,15 @@
-Updates
-=======
+yabadaba Package Updates
+========================
+
+0.3.1
+-----
+- Prompt parameter added to Database.destroy_records() allowing the screen
+  prompt to be skipped.
+- Improved checking of if the record model needs to be built when the records
+  are added or uploaded for local databases.
+- Improved checking of if the default name needs to be assigned to a record
+  during load_model().
+- Updated cdcs required version in setup.py
 
 0.3.0
 -----
