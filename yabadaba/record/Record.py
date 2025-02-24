@@ -218,10 +218,12 @@ class Record():
 
         if self.noname is False:
             try:
-                self.name
+                assert self.name is not None
             except:
-                if self.defaultname is not None:
+                try:
                     self.name = self.defaultname
+                except:
+                    self.name = None
 
     def set_values(self, **kwargs):
         """
@@ -241,10 +243,12 @@ class Record():
 
         if self.noname is False:
             try:
-                self.name
+                assert self.name is not None
             except:
-                if self.defaultname is not None:
+                try:
                     self.name = self.defaultname
+                except:
+                    self.name= None
 
     def __str__(self) -> str:
         """str: The string representation of the record"""
