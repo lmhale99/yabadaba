@@ -1,6 +1,14 @@
 yabadaba Package Updates
 ========================
 
+0.3.2
+-----
+- A is_uuid() test method added in tools that tests if a str is consistent
+  with a UUID.
+- UnitConverter.build_unit() now updates the values in the unit and unitdoc
+  dicts rather than completely replacing them.  This enhances compatibility
+  with atomman.unitconvert.
+
 0.3.1
 -----
 - Prompt parameter added to Database.destroy_records() allowing the screen
