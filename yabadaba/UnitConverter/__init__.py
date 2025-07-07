@@ -239,9 +239,6 @@ class UnitConverter():
         can be retrieved by their string names.
         """
         
-        self.__unit = {}
-        self.__unitdoc = {}
-        
         # Copy all float attributes of numericalunits to unit
         for key in dir(self):
             
