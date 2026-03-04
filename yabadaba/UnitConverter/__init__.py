@@ -11,6 +11,9 @@ from DataModelDict import DataModelDict as DM
 import numpy as np
 import numpy.typing as npt
 
+# yabadaba imports
+from ..typing import unitfloat
+
 class UnitConverter():
 
     # Import derived units defined in separate files
@@ -248,7 +251,7 @@ class UnitConverter():
                 self.unit[key] = value
                 self.unitdoc[key] = getattr(UnitConverter, key).__doc__
 
-    def set_literal(self, term: str) -> npt.ArrayLike:
+    def set_literal(self, term: str) -> np.ndarray:
         """
         Convert string 'value unit' to numbers in working units.
         
@@ -293,48 +296,65 @@ class UnitConverter():
                     raise ValueError('Failed to parse term') from err
 
     def set_in_units(self, 
-                     value: npt.ArrayLike,
-                     units: str) -> npt.ArrayLike:
+                     value: unitfloat,
+                     units: Optional[str] = None) -> np.ndarray:
         """
         Convert value from specified units to working units.
         
         Parameters
         ----------
-        value : array-like object
-            A numerical value or list/array of values.
-        units : str
-            The units that value is in.
+        value : str, float or array-like object
+            A numerical value or list/array of values.  String values will be
+            interpreted using set_literal() and may therefore optionally contain
+            units information.  If a string value contains units information, do
+            not give it separately to the units parameter!
+        units : str or None
+            The units that the value is in.  The default value of None will either
+            do no conversion or use units defined in a string value.
             
         Returns
         -------
         float or numpy.ndarray
             The given value converted from the specified units to working units.
         """
-        units = self.parse(units)
-        return np.asarray(value) * units
+        if isinstance(value, str):
+            
+            try:
+                # If conversion works on full str, then no units are present
+                value = ast.literal_eval(value)
+            except:
+                # Otherwise, interpret with set_literal()
+                value = self.set_literal(value)
+                if units is not None:
+                    raise ValueError('units given twice: in value str and separately!')
+        
+        # Parse units and convert
+        scale = self.parse(units)
+        return np.asarray(value) * scale
 
     def get_in_units(self, 
-                     value: npt.ArrayLike,
-                     units: str) -> npt.ArrayLike:
+                     value: Union[float, npt.ArrayLike],
+                     units: Optional[str] = None) -> np.ndarray:
         """
         Convert value from working units to specified units.
         
         Parameters
         ----------
-        value : array-like object
+        value : float or array-like object
             A numerical value or list/array of values.
-        units : str
-            The units to convert value to (from working units).
+        units : str or None
+            The units to convert value to (from working units).  A value
+            of None will do no conversion.
             
         Returns
         -------
         float or numpy.ndarray
             The given value converted to the specified units from working units.
         """
-        units = self.parse(units)
-        return np.asarray(value) / units
+        scale = self.parse(units)
+        return np.asarray(value) / scale
 
-    def value_unit(self, term: dict) -> npt.ArrayLike:
+    def value_unit(self, term: dict) -> np.ndarray:
         """
         Reads numerical value from dictionary containing 'value' and 'unit' keys.
         
@@ -362,7 +382,7 @@ class UnitConverter():
         
         return value
         
-    def error_unit(self, term: dict) -> npt.ArrayLike:
+    def error_unit(self, term: dict) -> np.ndarray:
         """
         Reads numerical error from dictionary containing 'error' and 'unit' keys.
         
@@ -391,9 +411,9 @@ class UnitConverter():
         return error
         
     def model(self,
-              value: npt.ArrayLike,
+              value: Union[float, npt.ArrayLike],
               units: Optional[str] = None,
-              error: Optional[npt.ArrayLike] = None) -> DM:
+              error: Optional[Union[float, npt.ArrayLike]] = None) -> DM:
         """
         Generates DataModelDict representation of data.
         
@@ -417,6 +437,8 @@ class UnitConverter():
         
         if units is not None:
             value = self.get_in_units(value, units)
+        else:
+            value = np.asarray(value)
         
         if error is not None:
             error = self.get_in_units(error, units)
@@ -460,14 +482,14 @@ class UnitConverter():
         ----------
         units : str or None
             String consisting of defined unit names, operators, and numerical 
-            values to interpret.
+            values to interpret.  If units is None or == 'scaled', then the returned
+            value will be 1.0, i.e. no unit conversion.
             
         Returns
         -------
         float
             The scaling factor for converting numbers in the given units to
-            working units. If units is None or == 'scaled', then this value is
-            1.0.
+            working units.
         """
         
         # Units of None does no scaling
