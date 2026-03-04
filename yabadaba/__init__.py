@@ -9,6 +9,8 @@ else:
     __version__ = resources.read_text('yabadaba', 'VERSION', encoding='UTF-8').strip()
 
 # Relative imports
+from . import typing
+
 from .UnitConverter import unitconvert
 from . import tools
 from .Settings import settings
@@ -28,7 +30,7 @@ from .database import databasemanager, load_database
 from .check_modules import check_modules
 from .querydoc import querydoc
 
-__all__ = ['__version__', 'tools', 'settings', 'unitconvert',
+__all__ = ['__version__', 'typing', 'tools', 'settings', 'unitconvert',
            'query', 'load_query', 'querymanager',
            'record', 'load_record', 'recordmanager',
            'value', 'load_value', 'valuemanager',
