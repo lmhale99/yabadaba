@@ -317,6 +317,20 @@ class Record():
         """tuple: The Value objects associated with the Record"""
         return self.__value_objects
 
+    @property
+    def valuedoc(self) -> str:
+        """str: A description of all the values recognized by the record."""
+        doc = f'# {self.style} Values\n\n'
+        for name, value in self.__value_dict.items():
+            #doc += f'- __{name}__ (*{value.style}*): {value.description}\n'
+            doc += f'- __{name}__: {value.description}\n'
+
+        return doc
+
+    @property
+    def valuenames(self):
+        return tuple(self.__value_dict.keys())
+
     def get_value(self, name):
         """Returns a Value object from __value_dict by name"""
         return self.__value_dict[name]
