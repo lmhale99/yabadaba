@@ -107,9 +107,9 @@ class LocalDatabase(Database):
             cache = pd.read_csv(cachefile)
 
             def interpret(series, key):
-                """Safely convert dict and list elements from str"""
+                """Safely convert dict, list and tuple elements from str"""
                 try:
-                    assert series[key][0] in '{['
+                    assert series[key][0] in '{[('
                     return ast.literal_eval(series[key])
                 except:
                     return series[key]
