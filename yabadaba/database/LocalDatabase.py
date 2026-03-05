@@ -415,7 +415,6 @@ class LocalDatabase(Database):
             If style, name and/or model given with record, or a matching record
             already exists.
         """
-
         # Create Record object if not given
         if record is None:
             record = load_record(style, model=model, name=name)
@@ -499,7 +498,6 @@ class LocalDatabase(Database):
         ValueError
             If style and/or name content given with record.
         """
-
         # Create Record object if not given
         if record is None:
             if model is None:
@@ -519,7 +517,7 @@ class LocalDatabase(Database):
         style_dir = Path(self.host, record.style)
         fname = Path(style_dir, f'{record.name}.{self.format}')
         if not fname.is_file():
-            raise ValueError(f'No existing record {record.name} found')
+            raise ValueError(f'No existing {record.style} record {record.name} found')
 
         # Retrieve/build model contents
         try:
@@ -567,10 +565,9 @@ class LocalDatabase(Database):
         ValueError
             If style and/or name given with record.
         """
-
         # Create Record object if not given
         if record is None:
-            record = self.get_record(name=name, style=style)
+            record = load_record(style, name=name)
 
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
@@ -623,19 +620,21 @@ class LocalDatabase(Database):
 
         # Create Record object if not given
         if record is None:
-            record = self.get_record(name=name, style=style)
+            record = load_record(style, name=name)
 
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
 
         # Verify that record exists
-        else:
-            record = self.get_record(name=record.name, style=record.style)
+        style_dir = Path(self.host, record.style)
+        fname = Path(style_dir, f'{record.name}.{self.format}')
+        if not fname.is_file():
+            raise ValueError(f'No existing {record.style} record {record.name} found')
 
         # Build path to record
-        dir_path = Path(self.host, record.style, record.name)
-        tar_path = Path(self.host, record.style, f'{record.name}.tar.gz')
+        dir_path = Path(style_dir, record.name)
+        tar_path = Path(style_dir, f'{record.name}.tar.gz')
 
         # Check if an archive or folder already exists
         if tar_path.exists():
@@ -693,14 +692,16 @@ class LocalDatabase(Database):
 
         # Create Record object if not given
         if record is None:
-            record = self.get_record(name=name, style=style)
+            record = load_record(style, name=name)
 
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
 
         # Build path to record
-        tar_path = Path(self.host, record.style, record.name+'.tar.gz')
+        tar_path = Path(self.host, record.style, f'{record.name}.tar.gz')
+        if not tar_path.is_file():
+            raise ValueError(f'No existing tar found for {record.style} record {record.name}')
 
         # Return content
         if raw is True:
@@ -737,7 +738,7 @@ class LocalDatabase(Database):
 
         # Create Record object if not given
         if record is None:
-            record = self.get_record(name=name, style=style)
+            record = load_record(style, name=name)
 
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
@@ -823,19 +824,21 @@ class LocalDatabase(Database):
 
         # Create Record object if not given
         if record is None:
-            record = self.get_record(name=name, style=style)
+            record = load_record(style, name=name)
 
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
 
         # Verify that record exists
-        else:
-            record = self.get_record(name=record.name, style=record.style)
+        style_dir = Path(self.host, record.style)
+        fname = Path(style_dir, f'{record.name}.{self.format}')
+        if not fname.is_file():
+            raise ValueError(f'No existing {record.style} record {record.name} found')
 
         # Build database paths
-        dir_path = Path(self.host, record.style, record.name)
-        tar_path = Path(self.host, record.style, f'{record.name}.tar.gz')
+        dir_path = Path(style_dir, record.name)
+        tar_path = Path(style_dir, f'{record.name}.tar.gz')
 
         # Check if an archive or folder already exists
         if tar_path.exists():
@@ -891,15 +894,11 @@ class LocalDatabase(Database):
 
         # Create Record object if not given
         if record is None:
-            record = self.get_record(name=name, style=style)
+            record = load_record(style, name=name)
 
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
-
-        # Verify that record exists
-        else:
-            record = self.get_record(name=record.name, style=record.style)
 
         # Build path to folder
         dir_path = Path(self.host, record.style, record.name)
@@ -936,15 +935,11 @@ class LocalDatabase(Database):
 
         # Create Record object if not given
         if record is None:
-            record = self.get_record(name=name, style=style)
+            record = load_record(style, name=name)
 
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
-
-        # Verify that record exists
-        else:
-            record = self.get_record(name=record.name, style=record.style)
 
         # Build path to tar file
         dir_path = Path(self.host, record.style, record.name)
@@ -992,15 +987,11 @@ class LocalDatabase(Database):
 
         # Create Record object if not given
         if record is None:
-            record = self.get_record(name=name, style=style)
+            record = load_record(style, name=name)
 
         # Issue a ValueError for competing kwargs
         elif style is not None or name is not None:
             raise ValueError('kwargs style and name cannot be given with kwarg record')
-
-        # Verify that record exists
-        else:
-            record = self.get_record(name=record.name, style=record.style)
 
         # Build database paths
         dir_path = Path(self.host, record.style, record.name)
