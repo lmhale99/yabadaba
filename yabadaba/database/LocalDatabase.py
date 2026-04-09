@@ -417,6 +417,8 @@ class LocalDatabase(Database):
         """
         # Create Record object if not given
         if record is None:
+            if style is None:
+                style = self.find_record_style(name)
             record = load_record(style, model=model, name=name)
 
         # Issue a ValueError for competing kwargs
@@ -502,6 +504,8 @@ class LocalDatabase(Database):
         if record is None:
             if model is None:
                 raise TypeError('no new model given')
+            if style is None:
+                style = self.find_record_style(name)
 
             record = load_record(style, model=model, name=name)
 
@@ -567,6 +571,8 @@ class LocalDatabase(Database):
         """
         # Create Record object if not given
         if record is None:
+            if style is None:
+                style = self.find_record_style(name)
             record = load_record(style, name=name)
 
         # Issue a ValueError for competing kwargs
@@ -620,6 +626,8 @@ class LocalDatabase(Database):
 
         # Create Record object if not given
         if record is None:
+            if style is None:
+                style = self.find_record_style(name)
             record = load_record(style, name=name)
 
         # Issue a ValueError for competing kwargs
@@ -690,8 +698,10 @@ class LocalDatabase(Database):
             If style and/or name content given with record.
         """
 
-        # Create Record object if not given
+        # Build path to record from name (and style)
         if record is None:
+            if style is None:
+                style = self.find_record_style(name)
             record = load_record(style, name=name)
 
         # Issue a ValueError for competing kwargs
@@ -699,7 +709,7 @@ class LocalDatabase(Database):
             raise ValueError('kwargs style and name cannot be given with kwarg record')
 
         # Build path to record
-        tar_path = Path(self.host, record.style, f'{record.name}.tar.gz')
+        
         if not tar_path.is_file():
             raise ValueError(f'No existing tar found for {record.style} record {record.name}')
 
@@ -709,7 +719,8 @@ class LocalDatabase(Database):
                 return f.read()
         else:
             tar = tarfile.open(tar_path)
-            record.tar = tar
+            if record is not None:
+                record.tar = tar
             return tar
 
     def delete_tar(self, 
@@ -738,6 +749,8 @@ class LocalDatabase(Database):
 
         # Create Record object if not given
         if record is None:
+            if style is None:
+                style = self.find_record_style(name)
             record = load_record(style, name=name)
 
         # Issue a ValueError for competing kwargs
@@ -781,7 +794,7 @@ class LocalDatabase(Database):
         """
 
         # Delete the existing tar archive stored in the database
-        self.delete_tar(record=record, name=name)
+        self.delete_tar(record=record, style=style, name=name)
 
         # Add the new tar archive
         self.add_tar(record=record, name=name, style=style, tar=tar,
@@ -824,6 +837,8 @@ class LocalDatabase(Database):
 
         # Create Record object if not given
         if record is None:
+            if style is None:
+                style = self.find_record_style(name)
             record = load_record(style, name=name)
 
         # Issue a ValueError for competing kwargs
@@ -894,6 +909,8 @@ class LocalDatabase(Database):
 
         # Create Record object if not given
         if record is None:
+            if style is None:
+                style = self.find_record_style(name)
             record = load_record(style, name=name)
 
         # Issue a ValueError for competing kwargs
@@ -935,6 +952,8 @@ class LocalDatabase(Database):
 
         # Create Record object if not given
         if record is None:
+            if style is None:
+                style = self.find_record_style(name)
             record = load_record(style, name=name)
 
         # Issue a ValueError for competing kwargs
@@ -987,6 +1006,8 @@ class LocalDatabase(Database):
 
         # Create Record object if not given
         if record is None:
+            if style is None:
+                style = self.find_record_style(name)
             record = load_record(style, name=name)
 
         # Issue a ValueError for competing kwargs
@@ -1013,3 +1034,23 @@ class LocalDatabase(Database):
             dir_path.mkdir(parents=True)
             for filename in iaslist(filenames):
                 shutil.copy2(filename, Path(dir_path, Path(filename).name))
+
+
+    def find_record_style(self, name):
+        """
+        Uses path globs to search for a record by name to identify its style.
+
+        Parameters
+        ----------
+        name : str
+            The record name to search for.
+        """
+        # Glob search for record if style is unknown
+        paths = [path for path in Path(self.host).glob(f'*/{name}.{self.format}')]
+        if len(paths) == 0:
+            raise ValueError(f'no existing record {name} found')
+        elif len(paths) > 1:
+            raise ValueError(f'multiple existing records called {name} found: style must be specified!')
+        
+        # Return style field
+        return paths[0].parent.name

@@ -47,7 +47,9 @@ def load_record(style: str,
     return record
 
 
-# Append RecordValue to valuemanager
+# Append Record Values to valuemanager
 valuemanager.import_style('record', '.RecordValue', __name__)
+valuemanager.import_style('recordlist', '.RecordValue', __name__)
+valuemanager.import_style('recordsubset', '.RecordSubsetValue', __name__)
 
 

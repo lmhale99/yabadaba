@@ -1,4 +1,5 @@
 from typing import Optional, Union, Any
+from inspect import isclass
 
 from DataModelDict import DataModelDict as DM
 
@@ -62,7 +63,7 @@ class RecordValue(Value):
             A short description for the value.  If not given, then the record name
             will be used.
         """
-        if issubclass(recordclass, Record):
+        if isclass(recordclass) and issubclass(recordclass, Record):
             self.__recordclass = recordclass
         elif isinstance(recordclass, str):
             self.__recordclass = recordmanager.get_class(recordclass)
