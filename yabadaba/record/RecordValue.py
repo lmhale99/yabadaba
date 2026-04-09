@@ -2,6 +2,8 @@ from typing import Optional, Union, Any
 
 from DataModelDict import DataModelDict as DM
 
+import pandas as pd
+
 from . import recordmanager, Record
 from ..query import load_query
 from ..value import Value
@@ -151,6 +153,9 @@ class RecordValue(Value):
         self.value.append(val)
 
     def build_model_value(self):
+        if self.valuerequired and len(self.value) == 0:
+            raise ValueError(f'no {self.name} values have been set!')
+
         models = []
         for val in self.value:
             models.append(val.build_model()[self.emptyrecord.modelroot])
@@ -163,6 +168,9 @@ class RecordValue(Value):
     
     def metadata_value(self):
         """Function to modify how values are represented in the metadata"""
+        if self.valuerequired and len(self.value) == 0:
+            raise ValueError(f'no {self.name} values have been set!')
+        
         metadatas = []
         for val in self.value:
             metadatas.append(val.metadata())
@@ -179,3 +187,12 @@ class RecordValue(Value):
             models.append({'model': model})
 
         return models
+
+    def metadata_df(self) -> pd.DataFrame:
+        """
+        Generates a pandas DataFrame of the metadata fields of all record items. 
+        """
+        data = []
+        for v in self.value:
+            data.append(v.metadata())
+        return pd.DataFrame(data)
