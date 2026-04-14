@@ -1,6 +1,44 @@
 yabadaba Package Updates
 ========================
 
+0.4.0
+-----
+- Record objects now have improved handling and support of Value objects.
+  This includes adding Value names to dir, better handling of getting and
+  setting attributes, and adding valuedoc and valuenames attributes.
+- Records now have an extensible setting and a _defaultextensible attribute.
+  Setting extensible = True provides limited support of custom values, where
+  they are set as class attributes and placed in the model and metadata.
+  The _defaultextensible attribute specifies the default value for extensible
+  for a record, i.e. if extensible=None.
+- Value objects now all have style and valuedoc attributes to support the
+  Record.valuedoc attribute.
+- A new RecordSubsetValue has been added allowing for values to be a single
+  record object of another style. For clarity, the old RecordValue class has
+  been renamed RecordListValue as it manages values that are lists of record
+  objects.  The Value styles 'record' and 'recordlist' are aliases for
+  backwards compatibility.
+- RecordListValue.metadata_df() added that generates the metadata content
+  for all contained records and returns it as a dataframe.
+- RecordListValue now also supports valuerequired and will throw an error
+  if the list is empty.
+- An allowcustomvalue option added to Value objects that when true makes
+  the allowedvalues list recommended values rather than required values.
+  While it turns off the explicit checks, the allowedvalues may still be
+  useful information for elsewhere.
+- FloatArrayValue and IntArrayValue now have a shape setting that specifies
+  a required shape (i.e. dimensions) for the array.
+- FloatMatchQuery and IntMatchQuery are renamed to FloatQuery and IntQuery
+  as querying now supports value ranges in the form of 2-value tuples.
+- FloatQuery now properly supports unit conversions.
+- LocalDatabase methods updated to avoid unnecessary operations.  Bug fix
+  for interpreting tuple values in the database cache files.
+- unitconvert.set_in_units() now supports string literal values with/without
+  units making it a single entry point for float or str input values.
+- typing submodule added, which contains a unitfloat type associated with
+  the input values to unitconvert.set_in_units(). 
+  
+
 0.3.2
 -----
 - A is_uuid() test method added in tools that tests if a str is consistent
