@@ -24,6 +24,7 @@ valuemanager.import_style('bool', '.BoolValue', __name__)
 valuemanager.import_style('date', '.DateValue', __name__)
 valuemanager.import_style('month', '.MonthValue', __name__)
 valuemanager.import_style('floatarray', '.FloatArrayValue', __name__)
+valuemanager.import_style('intarray', '.FloatArrayValue', __name__)
 
 def load_value(style: str,
                name: Optional[str] = None,

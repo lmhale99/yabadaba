@@ -9,6 +9,11 @@ from . import Value
 
 class BoolValue(Value):
     
+    @property
+    def style(self) -> str:
+        """str: The value style"""
+        return 'bool'
+
     def set_value_mod(self, val):
         
         # Check if value is in #text

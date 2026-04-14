@@ -14,6 +14,7 @@ class Value():
                  defaultvalue: Optional[Any] = None,
                  valuerequired: bool = False,
                  allowedvalues: Optional[tuple] = None,
+                 allowcustomvalue: bool = False,
                  metadatakey: Union[str, bool, None] = None,
                  metadataparent: Optional[str] = None,
                  modelpath: Optional[str] = None,
@@ -35,8 +36,14 @@ class Value():
             Indicates if a value must be given for the property.  If True, then
             checks will be performed that a value is assigned to the property.
         allowedvalues : tuple or None, optional
-            A list/tuple of values that the parameter is restricted to have.
-            Setting this to None (default) indicates any value is allowed.
+            A list/tuple of values that the parameter is supposed to have. This
+            either restricts what values are allowed or gives recommended
+            suggestions for values based on the allowcustomvalue setting.
+        allowcustomvalue : bool, optional
+            Determines how allowedvalues is interpreted. If False (default) then
+            values are restricted to what is listed in allowedvalues.  If True,
+            then the value is not restricted and allowedvalues becomes a list of
+            recommended values.
         metadatakey: str, bool or None, optional
             The key name to use for the property when constructing the record
             metadata dict.  If set to None (default) then name will be used for
@@ -60,6 +67,7 @@ class Value():
         self.__defaultvalue = defaultvalue
         self.__valuerequired = valuerequired
         self.__allowedvalues = allowedvalues
+        self.__allowcustomvalue = allowcustomvalue
 
         if description is None:
             description = self.name
@@ -84,6 +92,10 @@ class Value():
 
         self.__queries = deepcopy(self._default_queries)
 
+    @property
+    def style(self) -> str:
+        """str: The value style"""
+        return 'base'
 
     @property
     def name(self) -> str:
@@ -104,6 +116,23 @@ class Value():
     def valuerequired(self) -> bool:
         """bool: Indicates if the parameter must be given"""
         return self.__valuerequired
+    
+    @property
+    def allowedvalues(self) -> Optional[tuple]:
+        """tuple or None: tuple containing all allowed values.  If None, no limits."""
+        return self.__allowedvalues
+    
+    @allowedvalues.setter
+    def allowedvalues(self, val: Optional[tuple]):
+        if val is None:
+            self.__allowedvalues = None
+        else:
+            self.__allowedvalues = tuple(val)
+
+    @property
+    def allowcustomvalue(self) -> bool:
+        """bool: Indicates if a value is restricted to those in allowedvalues"""
+        return self.__allowcustomvalue
     
     @property
     def metadatakey(self) -> Union[str, bool]:
@@ -145,10 +174,17 @@ class Value():
     def value(self, val):
         val = self.set_value_mod(val)
         
-        if self.allowedvalues is not None and val is not None and val not in self.allowedvalues:
+        # Require val to be in allowedvalues if allowedvalues exists and a custom value is not allowed
+        if (self.allowcustomvalue is False and self.allowedvalues is not None and 
+            val is not None and val not in self.allowedvalues):
             raise ValueError(f'Invalid value {val} for {self.name}. Allowed values are {self.allowedvalues}')
             
         self.__value = val
+
+    def valuedoc(self, indent=0) -> str:
+        """Builds the valuedoc information for the value"""
+        pre = ' '*indent
+        return f'{pre}- __{self.name}__ (*{self.style}*): {self.description}'
 
     def set_value_mod(self, val):
         """Modifies values before setting them"""            
@@ -169,18 +205,6 @@ class Value():
                 return None
             
         return val
-
-    @property
-    def allowedvalues(self) -> Optional[tuple]:
-        """tuple or None: tuple containing all allowed values.  If None, no limits."""
-        return self.__allowedvalues
-    
-    @allowedvalues.setter
-    def allowedvalues(self, val: Optional[tuple]):
-        if val is None:
-            self.__allowedvalues = None
-        else:
-            self.__allowedvalues = tuple(val)
 
     @property
     def _default_queries(self) -> dict:

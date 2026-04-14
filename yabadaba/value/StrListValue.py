@@ -8,6 +8,11 @@ from ..tools import iaslist
 
 class StrListValue(Value):
     
+    @property
+    def style(self) -> str:
+        """str: The value style"""
+        return 'strlist'
+    
     def set_value_mod(self, val):
         if val is None:
             return None

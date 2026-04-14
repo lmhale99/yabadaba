@@ -7,6 +7,11 @@ from . import Value
 
 class LongStrValue(Value):
     
+    @property
+    def style(self) -> str:
+        """str: The value style"""
+        return 'longstr'
+    
     def set_value_mod(self, val):
 
         # Check if value is in #text

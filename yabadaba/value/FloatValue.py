@@ -8,12 +8,18 @@ from .. import unitconvert as uc
 
 class FloatValue(Value):
     
+    @property
+    def style(self) -> str:
+        """str: The value style"""
+        return 'float'
+    
     def __init__(self,
                  name: str,
                  record,
                  defaultvalue: Optional[Any] = None,
                  valuerequired: bool = False,
                  allowedvalues: Optional[tuple] = None,
+                 allowcustomvalue: bool = False,
                  metadatakey: Union[str, bool, None] = None,
                  metadataparent: Optional[str] = None,
                  modelpath: Optional[str] = None,
@@ -38,6 +44,11 @@ class FloatValue(Value):
         allowedvalues : tuple or None, optional
             A list/tuple of values that the parameter is restricted to have.
             Setting this to None (default) indicates any value is allowed.
+        allowcustomvalue : bool, optional
+            Determines how allowedvalues is interpreted. If False (default) then
+            values are restricted to what is listed in allowedvalues.  If True,
+            then the value is not restricted and allowedvalues becomes a list of
+            recommended values.
         metadatakey: str, bool or None, optional
             The key name to use for the property when constructing the record
             metadata dict.  If set to None (default) then name will be used for
@@ -62,6 +73,7 @@ class FloatValue(Value):
         
         super().__init__(name, record, defaultvalue=defaultvalue,
                          valuerequired=valuerequired, allowedvalues=allowedvalues,
+                         allowcustomvalue=allowcustomvalue,
                          metadatakey=metadatakey, metadataparent=metadataparent,
                          modelpath=modelpath, description=description)
         
@@ -77,8 +89,8 @@ class FloatValue(Value):
 
         if val is None:
             return None
-        elif isinstance(val, str) and self.unit is not None:
-            return uc.set_literal(val)
+        elif self.unit is not None:
+            return uc.set_in_units(val)
         else:
             return float(val)
     
@@ -89,11 +101,12 @@ class FloatValue(Value):
             return {}
         else:
             return {
-                self.name: load_query('float_match',
+                self.name: load_query('float',
                                     name=self.metadatakey,
                                     parent=self.metadataparent,
                                     path=f'{self.record.modelroot}.{self.modelpath}',
-                                    description=f'Return only the records where {self.description} matches a given value')
+                                    unit=self.unit,
+                                    description=f'Return only the records where {self.description} matches a given value or is in a given range')
             }
     
     def build_model_value(self):
@@ -106,7 +119,7 @@ class FloatValue(Value):
             return uc.model(self.value, self.unit)
         
     def load_model_value(self, val):
-        if self.unit is None:
+        if isinstance(val, float) or self.unit is None:
             return val
         else:
             return uc.value_unit(val)

@@ -10,6 +10,11 @@ from . import Value
 
 class DateValue(Value):
     
+    @property
+    def style(self) -> str:
+        """str: The value style"""
+        return 'date'
+
     def set_value_mod(self, val):
         
         # Check if value is in #text

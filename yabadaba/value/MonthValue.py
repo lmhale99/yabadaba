@@ -10,6 +10,11 @@ from . import Value
 class MonthValue(Value):
     """Variation of IntValue focused purely on months.  Note model uses xsd:gMonth format"""
     
+    @property
+    def style(self) -> str:
+        """str: The value style"""
+        return 'month'
+    
     @staticmethod
     def str_to_number(val: str):
         """

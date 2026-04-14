@@ -7,6 +7,11 @@ from . import Value
 
 class StrValue(Value):
     
+    @property
+    def style(self) -> str:
+        """str: The value style"""
+        return 'str'
+    
     def set_value_mod(self, val):
         
         # Check if value is in #text

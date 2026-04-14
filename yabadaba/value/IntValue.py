@@ -9,6 +9,11 @@ from . import Value
 
 class IntValue(Value):
     
+    @property
+    def style(self) -> str:
+        """str: The value style"""
+        return 'int'
+    
     def set_value_mod(self, val):
 
         # Check if value is in #text
@@ -34,9 +39,9 @@ class IntValue(Value):
             return {}
         else:
             return {
-                self.name: load_query('int_match',
+                self.name: load_query('int',
                                     name=self.metadatakey,
                                     parent=self.metadataparent,
                                     path=f'{self.record.modelroot}.{self.modelpath}',
-                                    description=f'Return only the records where {self.description} matches a given value')
+                                    description=f'Return only the records where {self.description} matches a given value or is in a given range')
             }
