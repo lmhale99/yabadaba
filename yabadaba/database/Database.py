@@ -669,3 +669,13 @@ class Database():
                         style: str) -> str:
         """Return the description of query parameters for a given record style"""
         return load_record(style).querydoc
+
+    def record_valuenames(self,
+                          style: str) -> list:
+        """Return the list of value names for a given record style"""
+        return load_record(style).valuenames
+
+    def record_valuedoc(self,
+                        style: str) -> str:
+        """Return the description of values for a given record style"""
+        return load_record(style).valuedoc
