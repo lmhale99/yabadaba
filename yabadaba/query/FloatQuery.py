@@ -13,8 +13,8 @@ from ..tools import iaslist
 
 from .Query import Query
 
-class FloatMatchQuery(Query):
-    """Class for querying float fields for closely matching values"""
+class FloatQuery(Query):
+    """Class for querying float fields for closely matching values or ranges of values"""
 
     def __init__(self,
                  name: Optional[str] = None,
@@ -56,12 +56,12 @@ class FloatMatchQuery(Query):
     @property
     def style(self) -> str:
         """str: The query style"""
-        return 'float_match'
+        return 'float'
 
     @property
     def parameter_type(self) -> str:
         """str: The types of query parameter values accepted by this query style"""
-        return 'float or list, optional'
+        return 'float, tuple or list, optional'
 
     @property
     def unit(self) -> str:
@@ -96,16 +96,31 @@ class FloatMatchQuery(Query):
         path = f'{prefix}{self.path}'
 
         if value is not None:
+            
+            # Handle unique case of a single 2-value tuple
+            if isinstance(value, tuple) and len(value) == 2:
+                value = [value]
 
             # Init newquery as list of $or evaluations
             newquery = {'$or':[]}
 
             # Iterate over all values
             for v in iaslist(value):
-                v = float(v)
+                
+                if isinstance(v, tuple) and len(v) == 2:
+                    minval, maxval = self.range_check(v)
+                    newquery['$or'].append({path: {'$gte': minval, '$lte':maxval}})
 
-                # Add query operation for ranged search
-                newquery['$or'].append({path:{'$gte': v - self.atol, '$lte' : v + self.atol}})
+                else:
+                    if self.unit is None:
+                        # Make sure value is float
+                        v = float(v)
+                    else:
+                        # Convert values to working units, then to database units
+                        v = float(uc.get_in_units(uc.set_in_units(v), self.unit))
+
+                    # Add query operation for ranged search
+                    newquery['$or'].append({path:{'$gte': v - self.atol, '$lte' : v + self.atol}})
             
             # Append newquery to querylist
             querylist.append(newquery)
@@ -158,11 +173,21 @@ class FloatMatchQuery(Query):
             if value is None:
                 return True
             
-            # Convert value to array of floats
-            value = np.array([float(v) for v in iaslist(value)])
+            # Handle unique case of a single 2-value tuple
+            if isinstance(value, tuple) and len(value) == 2:
+                value = [value]
 
-            # Convert value to target units
-            value = uc.set_in_units(value, self.unit)
+            # Split values into single floats or tuples of (min, max)
+            val = []
+            valranges = []
+            for v in iaslist(value):
+                if isinstance(v, tuple) and len(v) == 2:
+                    valranges.append(v)
+                else:
+                    if self.unit is None:
+                        val.append(float(v))
+                    else:
+                        val.append(float(uc.get_in_units(uc.set_in_units(v), self.unit)))
 
             if parent is None:
 
@@ -170,23 +195,62 @@ class FloatMatchQuery(Query):
                 if name not in series or pd.isna(series[name]):
                     return False
                 
-                # Check for a value match
-                return np.any(np.isclose(float(series[name]), value, rtol=0.0, atol=self.atol))
-            
-            else:
+                # Check for a direct value match
+                if len(val) > 0:
+                    if np.any(np.isclose(float(series[name]), val, rtol=0.0, atol=self.atol)):
+                        return True
 
+                # Check if value is in a given range
+                for valrange in valranges:
+                    minval, maxval = self.range_check(valrange)
+                    if float(series[name]) >= minval and float(series[name]) <= maxval:
+                        return True
+                    
+                # Return False for no matching values or ranges
+                return False
+
+            else:
+                
+                if parent not in series:
+                    return False
+                
                 # Loop over all child elements
                 for child in iaslist(series[parent]):
 
                     # Check if child element has name
                     if name in child and pd.notna(child[name]):
 
-                        # Check if child element matches a value
-                        if np.any(np.isclose(float(child[name]), value, rtol=0.0, atol=self.atol)):
-                            return True
+                        # Check if child element directly matches a value
+                        if len(val) > 0:
+                            if np.any(np.isclose(float(child[name]), val, rtol=0.0, atol=self.atol)):
+                                return True
+                            
+                        # Check if value is in a given range
+                        for valrange in valranges:
+                            minval, maxval = self.range_check(valrange)
+                            if float(child[name]) >= minval and float(child[name]) <= maxval:
+                                return True
 
                 # Return default False for no matching child elements
                 return False
 
         # Use apply_function on df using value and object attributes
         return df.apply(apply_function, axis=1, args=(self.name, value, self.parent)).astype(bool)
+
+    def range_check(self, valrange):
+        """For range query values, numbers become float and None become +-inf"""
+        if valrange[0] is not None and self.unit is None:
+            minval = float(valrange[0])
+        elif valrange[0] is not None:
+            minval = float(uc.get_in_units(uc.set_in_units(valrange[0]), self.unit))
+        else:
+            minval = -np.inf
+
+        if valrange[1] is not None and self.unit is None:
+            minval = float(valrange[1])
+        elif valrange[1] is not None:
+            maxval = float(uc.get_in_units(uc.set_in_units(valrange[1]), self.unit))
+        else:
+            maxval = np.inf
+
+        return (minval, maxval)
