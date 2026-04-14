@@ -32,6 +32,7 @@ class Record():
                  name: Optional[str] = None,
                  database = None,
                  noname: bool = False,
+                 extensible: Optional[bool] = None,
                  **kwargs: any):
         """
         Initializes a Record object for a given style.
@@ -56,42 +57,31 @@ class Record():
         kwargs : any
             Any record-specific attributes to assign.
         """
+        self.__value_dict = {}  # Must be defined first for __getattribute__ and __setattr__ to work properly!
         self.__model = None
         self.__name = None
         self.tar = None
         self.database = database
         self.noname = noname
 
-        self.__value_objects = None
-        self.__value_objects = tuple(self._init_value_objects())
+        if extensible is None:
+            self.__extensible = self._defaultextensible
+        elif isinstance(extensible, bool):
+            self.__extensible = extensible
+        else:
+            raise TypeError('extensible must be bool or None')
+
+
+        self.__can_add_values = True
         self._init_values()
-        if len(self.__value_dict) > 0:
-            if len(self.value_objects) > 0:
-                raise ValueError('Value objects should not be set using both _init_value_objects and _init_value_dict')
-            self.__value_objects = tuple(self.__value_dict.values())
+        self.__can_add_values = False
+        self.__value_objects = tuple(self.__value_dict.values())
 
         if model is not None:
             assert len(kwargs) == 0, f"cannot specify kwargs with model: '{kwargs.keys()}'"
             self.load_model(model, name=name)
         else:
             self.set_values(name=name, **kwargs)
-
-    def _init_value_objects(self) -> list:
-        """
-        Method that defines the value objects for the Record.  This should
-        1. Call the method's super().
-        2. Use yabadaba.load_value() to build Value objects that are set to
-           private attributes of self.
-        3. Append the list returned by the super() with the new Value objects.
-
-        Returns
-        -------
-        value_objects: A list of all value objects.
-        """
-        if self.__value_objects is not None:
-            raise RuntimeError('_init_value_objects should only be called by Record.__init__')
-
-        return []
 
     def _init_values(self):
         """
@@ -152,6 +142,8 @@ class Record():
         **kwargs : any, optional
             Any additional style-specific keyword parameters.
         """
+        if not self.__can_add_values:
+            raise ValueError('Values can only be added when _init_method() is called by __init__()!')
         self.__value_dict[name] = load_value(style=style, name=name, record=self,
                                              defaultvalue=defaultvalue,
                                              valuerequired=valuerequired,
@@ -162,27 +154,24 @@ class Record():
                                              description=description,
                                              **kwargs)
 
-    def __getattr__(self, name: str):
-        """Adjusted to get value attributes from Value objects"""
-        if name.startswith('__'):
-            super().__getattr__(self, name)
-
-        elif name == '_Record__value_dict':
-            self.__value_dict = {}
-            return self.__value_dict
-        
-        elif name in self.__value_dict:
-            return self.__value_dict[name].value
+    def __getattribute__(self, name):
+        """Adjusted to get value attributes from Value objects"""        
+        if name != '_Record__value_dict' and hasattr(self,'_Record__value_dict') and name in self.__value_dict:
+            return self.__value_dict[name].value    
+        else:
+            return super().__getattribute__(name)
     
     def __setattr__(self, name: str, value: Any):
         """Adjusted to set to value attributes of Value objects"""
-        if name == '_Record__value_dict' or name.startswith('__'):
-            super().__setattr__(name, value)
-        elif name in self.__value_dict:
+        if name != '_Record__value_dict' and hasattr(self,'_Record__value_dict') and name in self.__value_dict:
             self.__value_dict[name].value = value
         else:
             super().__setattr__(name, value)
 
+
+    def __dir__(self):
+        # Get default attributes
+        return sorted(set(super().__dir__() + list(self.valuenames)))
 
     def load_model(self,
                    model: Union[str, io.IOBase, DM],
@@ -216,6 +205,15 @@ class Record():
         for value_object in self.value_objects:
             value_object.load_model(rec)
 
+        if self.extensible:
+            modelpaths = []
+            for value_object in self.value_objects:
+                if '.' not in value_object.modelpath:
+                    modelpaths.append(value_object.modelpath)
+            for key in rec:
+                if key not in modelpaths:
+                    setattr(self, key, rec[key])
+
         if self.noname is False:
             try:
                 assert self.name is not None
@@ -240,6 +238,11 @@ class Record():
         for value_object in self.value_objects:
             if value_object.name in kwargs:
                 setattr(self, value_object.name, kwargs[value_object.name])
+
+        if self.extensible:
+            for key in kwargs:
+                if key not in self.valuenames:
+                    setattr(self, key, kwargs[key])
 
         if self.noname is False:
             try:
@@ -313,6 +316,16 @@ class Record():
         self.__noname = val
 
     @property
+    def extensible(self) -> bool:
+        """bool: Indicates if the record values are extensible."""
+        return self.__extensible
+
+    @property
+    def _defaultextensible(self) -> bool:
+        """bool: Default value for extensible for this record class."""
+        return False
+
+    @property
     def value_objects(self) -> tuple:
         """tuple: The Value objects associated with the Record"""
         return self.__value_objects
@@ -320,12 +333,11 @@ class Record():
     @property
     def valuedoc(self) -> str:
         """str: A description of all the values recognized by the record."""
-        doc = f'# {self.style} Values\n\n'
-        for name, value in self.__value_dict.items():
-            #doc += f'- __{name}__ (*{value.style}*): {value.description}\n'
-            doc += f'- __{name}__: {value.description}\n'
+        doc = [f'# {self.style} Values\n']
+        for value in self.value_objects:
+            doc.append(value.valuedoc())
 
-        return doc
+        return '\n'.join(doc)
 
     @property
     def valuenames(self):
@@ -377,7 +389,13 @@ class Record():
         self.__model[self.modelroot] = rec = DM()
 
         for value_object in self.value_objects:
-            value_object.build_model(rec)        
+            value_object.build_model(rec)
+
+        if self.extensible:    
+            for key in self.__dict__.keys():
+                if key.startswith('_Record'):
+                    continue
+                rec[key] = self.__dict__[key]
 
         return self.__model
 
@@ -396,6 +414,12 @@ class Record():
         for value_object in self.value_objects:
             value_object.metadata(meta)
         
+        if self.extensible:    
+            for key in self.__dict__.keys():
+                if key.startswith('_Record'):
+                    continue
+                meta[key] = self.__dict__[key]
+
         return meta
 
     @property
