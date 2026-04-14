@@ -10,8 +10,8 @@ from ..query import load_query
 from ..value import Value
 from ..tools import aslist, iaslist
 
-class RecordValue(Value):
-    
+class RecordListValue(Value):
+
     def __init__(self,
                  name: str,
                  record,
@@ -24,7 +24,7 @@ class RecordValue(Value):
                  modelpath: Optional[str] = None,
                  description: Optional[str] = None):
         """
-        Initialize a general Parameter object.
+        Initialize a Value that is a list of Record objects of the same style.
 
         Parameters
         ----------
@@ -75,6 +75,20 @@ class RecordValue(Value):
                          valuerequired=valuerequired, allowedvalues=allowedvalues,
                          metadatakey=metadatakey, metadataparent=metadataparent,
                          modelpath=modelpath, description=description)
+
+    @property
+    def style(self) -> str:
+        """str: The value style"""
+        return 'recordlist'
+    
+    def valuedoc(self, indent=0) -> str:
+        """Builds the valuedoc information for the value"""
+        pre = ' '*indent
+        doc = [f'{pre}- __{self.name}__ (*list of {self.emptyrecord.style} records*): {self.description}']
+        for value in self.emptyrecord.value_objects:
+            doc.append(value.valuedoc(indent+4))
+
+        return '\n'.join(doc)
 
     @property
     def recordclass(self) -> type[Record]:

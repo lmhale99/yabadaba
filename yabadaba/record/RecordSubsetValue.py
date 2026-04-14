@@ -100,6 +100,20 @@ class RecordSubsetValue(Value):
                          modelpath=modelpath, description=description)
 
     @property
+    def style(self) -> str:
+        """str: The value style"""
+        return 'recordsubset'
+    
+    def valuedoc(self, indent=0) -> str:
+        """Builds the valuedoc information for the value"""
+        pre = ' '*indent
+        doc = [f'{pre}- __{self.name}__ (*{self.recordclass().style} record*): {self.description}']
+        for value in self.value.value_objects:
+            doc.append(value.valuedoc(indent+4))
+
+        return '\n'.join(doc)
+    
+    @property
     def recordclass(self) -> type[Record]:
         """Class: The record class associated with this value"""
         return self.__recordclass
@@ -144,7 +158,8 @@ class RecordSubsetValue(Value):
         # Check that val is of the correct record class
         if isinstance(val, self.recordclass):
             return val
-        
+        elif isinstance(val, dict):
+            return self.recordclass(noname=True, **val)
         else:
             raise TypeError(f'value must be a {self.recordclass} object')
 
