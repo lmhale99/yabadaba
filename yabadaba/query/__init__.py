@@ -23,6 +23,11 @@ querymanager.import_style('date_match', '.DateMatchQuery', __name__)
 querymanager.import_style('month_match', '.MonthMatchQuery', __name__)
 querymanager.import_style('dummy', '.DummyQuery', __name__)
 
+# Backwards compatibility aliases
+querymanager.import_style('int_match', '.IntQuery', __name__)
+querymanager.import_style('float_match', '.FloatQuery', __name__)
+
+
 def load_query(style: str,
                name: Optional[str] = None,
                parent: Optional[str] = None,
