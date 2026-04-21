@@ -1,5 +1,6 @@
-# coding: utf-8
 # Standard Python libraries
+import types
+import functools
 from pathlib import Path
 from importlib import resources
 from typing import Union, Optional, Any
@@ -74,6 +75,7 @@ class Record():
 
         self.__can_add_values = True
         self._init_values()
+        self.__set_recordlist_methods()
         self.__can_add_values = False
         self.__value_objects = tuple(self.__value_dict.values())
 
@@ -98,6 +100,7 @@ class Record():
                    defaultvalue: Optional[Any] = None,
                    valuerequired: bool = False,
                    allowedvalues: Optional[tuple] = None,
+                   allowcustomvalue: bool = False,
                    metadatakey: Union[str, bool, None] = None,
                    metadataparent: Optional[str] = None,
                    modelpath: Optional[str] = None,
@@ -123,6 +126,11 @@ class Record():
         allowedvalues : tuple or None, optional
             A list/tuple of values that the parameter is restricted to have.
             Setting this to None (default) indicates any value is allowed.
+        allowcustomvalue : bool, optional
+            Determines how allowedvalues is interpreted. If False (default) then
+            values are restricted to what is listed in allowedvalues.  If True,
+            then the value is not restricted and allowedvalues becomes a list of
+            recommended values.
         metadatakey: str, bool or None, optional
             The key name to use for the property when constructing the record
             metadata dict.  If set to None (default) then name will be used for
@@ -148,6 +156,7 @@ class Record():
                                              defaultvalue=defaultvalue,
                                              valuerequired=valuerequired,
                                              allowedvalues=allowedvalues,
+                                             allowcustomvalue=allowcustomvalue,
                                              metadatakey=metadatakey,
                                              metadataparent=metadataparent,
                                              modelpath=modelpath,
@@ -168,6 +177,31 @@ class Record():
         else:
             super().__setattr__(name, value)
 
+
+    def __set_recordlist_methods(self):
+        """Creates add_* and *_df methods for recordlist values"""
+        
+        self.__recordlist_methods = []
+        
+        # Find all recordlist values
+        for name, value in self.__value_dict.items():
+            if value.style == 'recordlist':
+
+                # Build and set a custom add_*() method
+                def add_fxn(self, valuename, **kwargs):
+                    self.get_value(valuename).append(**kwargs) 
+                p_add_fxn = functools.partial(add_fxn, valuename=name)
+                p_add_fxn.__doc__ = f"Adds a {name} to the record"
+                setattr(self, f'add_{name}', types.MethodType(p_add_fxn, self))
+                self.__recordlist_methods.append(f'add_{name}')
+
+                # Build and set a custom *_df() method
+                def df_fxn(self, valuename):
+                    return self.get_value(valuename).metadata_df()
+                p_df_fxn = functools.partial(df_fxn, valuename=name)
+                p_df_fxn.__doc__ = f"Generates a pandas DataFrame of the {name} information"
+                setattr(self, f'{name}_df', types.MethodType(p_df_fxn, self))
+                self.__recordlist_methods.append(f'{name}_df')
 
     def __dir__(self):
         # Get default attributes
@@ -393,7 +427,7 @@ class Record():
 
         if self.extensible:    
             for key in self.__dict__.keys():
-                if key.startswith('_Record'):
+                if key.startswith('_Record') or key in self.__recordlist_methods:
                     continue
                 rec[key] = self.__dict__[key]
 
@@ -416,7 +450,7 @@ class Record():
         
         if self.extensible:    
             for key in self.__dict__.keys():
-                if key.startswith('_Record'):
+                if key.startswith('_Record') or key in self.__recordlist_methods:
                     continue
                 meta[key] = self.__dict__[key]
 

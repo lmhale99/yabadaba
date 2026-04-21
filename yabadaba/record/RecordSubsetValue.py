@@ -17,6 +17,7 @@ class RecordSubsetValue(Value):
                  defaultvalue: Optional[Any] = None,
                  valuerequired: bool = False,
                  allowedvalues: Optional[tuple] = None,
+                 allowcustomvalue: bool = False,
                  metadatakey: Union[str, bool, None] = None,
                  metadataparent: Optional[str] = None,
                  metadataprefix: str = '',
@@ -49,6 +50,11 @@ class RecordSubsetValue(Value):
             object will always exist for the value.
         allowedvalues : tuple or None, optional
             Must be None (default) for record subsets as the data is complex.
+        allowcustomvalue : bool, optional
+            Determines how allowedvalues is interpreted. If False (default) then
+            values are restricted to what is listed in allowedvalues.  If True,
+            then the value is not restricted and allowedvalues becomes a list of
+            recommended values.
         metadatakey: str, bool or None, optional
             Must be None or False for record subset values, where None is the
             default behavior and False indicates no metadata keys from the subset
@@ -96,6 +102,7 @@ class RecordSubsetValue(Value):
 
         super().__init__(name, record, defaultvalue=defaultvalue,
                          valuerequired=valuerequired, allowedvalues=allowedvalues,
+                         allowcustomvalue=allowcustomvalue,
                          metadatakey=metadatakey, metadataparent=metadataparent,
                          modelpath=modelpath, description=description)
 
