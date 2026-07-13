@@ -37,12 +37,16 @@ setup(name = 'yabadaba',
         'lxml',
         'DataModelDict',
         'IPython',
-        'numpy', 
+        'numpy',
         'pandas',
         'cdcs>=0.2.4',
         'pymongo',
         'tqdm',
-        'pillow'
+        'pillow',
+        'fastmcp',
+        'open-webui',
+        'mcpo',
+        'uv'
       ],
       package_data={'': ['*']},
       zip_safe = False)

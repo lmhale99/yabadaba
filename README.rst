@@ -94,6 +94,8 @@ Installation
 The yabadaba package can easily be installed using pip or conda-forge
 
     pip install yabadaba
++# To include optional agentic features (MCP server, Open WebUI integration), install the extra:
++#   pip install "yabadaba[agentic]"
 
 or
 
