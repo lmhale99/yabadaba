@@ -6,17 +6,13 @@ Yabadaba database retrieval system to LLM agents.
 
 Configuration:
     - YABADABA_DB_NAME: Environment variable specifying the database to load.
-    - Atomman Fallback: If no environment variable is set, it attempts to
-      initialize via the Atomman library.
 
 Transport:
     - Uses stdio for communication with MCP clients (e.g., Open WebUI, Claude Desktop).
 
-Setup: 
+Setup:
     - Start venv
-    - Configure your database 
-    - If none, ensure atomman available in the virtual environment
-        - Install with uv pip install atomman
+    - Configure your database
     - Other libraries needed: fastmcp
     - Run uv run mcpo --port 8000 -- python .\mcp_server.py
 '''
@@ -37,16 +33,12 @@ except ImportError as exc:
         "fastmcp is required to run the MCP server. Install it via \"pip install 'yabadaba[fastmcp]'\" or \"uv pip install 'yabadaba[fastmcp]'\"."
     ) from exc
 from tqdm import tqdm
-# Abort if MCP (uv or mcpo) is not installed
 if not shutil.which("uv") or not shutil.which("mcpo"):
     sys.exit("Error: MCP or required 'uv' tool is not installed. Aborting MCP server.")
 from yabadaba.database import load_database
 from yabadaba.querydoc import querydoc
 
-try:
-    from atomman.library.Database import Database as AtommanDatabase
-except ImportError:
-    AtommanDatabase = None
+# Atomman fallback removed; only explicit DB via YABADABA_DB_NAME is supported.
 
 # Initialize FastMCP server
 if FastMCP is None:
@@ -61,7 +53,6 @@ def initialize_db() -> "object | None":
 
     Priority order:
     1. ``YABADABA_DB_NAME`` environment variable (explicit override).
-    2. ``AtommanDatabase`` if the library is available.
 
     Returns:
         The database object if successful, otherwise ``None``.
@@ -71,19 +62,13 @@ def initialize_db() -> "object | None":
             return load_database(name=DB_NAME)
         except Exception as e:
             print(f"Warning: Yabadaba Database ({DB_NAME}) init failed: {e}", file=sys.stderr)
-
-    if AtommanDatabase is not None:
-        try:
-            return AtommanDatabase(remote=True).remote_database
-        except Exception as e:
-            print(f"Warning: Atomman Database init failed: {e}", file=sys.stderr)
-
+    # No Atomman fallback; return None if DB not configured.
     return None
 
 # Initialize the database once at startup
 DB = initialize_db()
 if DB is None:
-    print("Warning: No database configured. Please ensure Atomman is installed or set YABADABA_DB_NAME environment variable.", file=sys.stderr)
+    raise SystemExit("Database not configured. Set YABADABA_DB_NAME environment variable to specify a database.")
 
 @mcp.tool()
 def list_available_styles() -> str:
@@ -210,7 +195,7 @@ async def query_database(style: str, query_params: dict = None) -> str:
              truncated to the first 50 entries with a summary note included.
     """
     if DB is None:
-        return "Database not configured. Please ensure Atomman is installed or set YABADABA_DB_NAME environment variable."
+        return "Database not configured. Set YABADABA_DB_NAME environment variable to specify a database."
     
     # yabadaba style
     if hasattr(DB, "get_records"):
