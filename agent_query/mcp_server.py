@@ -19,6 +19,7 @@ Setup:
 import sys
 import os
 import json
+import importlib
 import shutil
 from pathlib import Path
 
@@ -38,7 +39,13 @@ if not shutil.which("uv") or not shutil.which("mcpo"):
 from yabadaba.database import load_database
 from yabadaba.querydoc import querydoc
 
-# Atomman fallback removed; only explicit DB via YABADABA_DB_NAME is supported.
+libs_str = os.getenv("LIBRARIES", "[]")   
+LIBRARIES = json.loads(libs_str)
+for lib in LIBRARIES:
+    try:
+        importlib.import_module(lib)
+    except Exception as e:
+        print(f"Warning: Failed to import {lib}: {e}", file=sys.stderr)
 
 # Initialize FastMCP server
 if FastMCP is None:

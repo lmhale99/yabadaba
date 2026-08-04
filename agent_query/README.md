@@ -18,29 +18,7 @@ A lightweight extension of the core **yabadaba** package that supplies a WebSock
 
 - Python 3.11
 - Core **yabadaba** package
-- `uv` tool (for running `mcpo`)
 - Optional virtual environment (`.venv/`) for the bundled Open WebUI executable.
-
----
-
-## Installation
-
-1. Clone the repository and navigate to the project root.
-2. (Optional) Create and activate a virtual environment:
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate   # on Windows use `.venv\\Scripts\\activate`
-   ```
-3. Install the package in editable mode:
-   ```bash
-   pip install -e .
-   ```
-4. Ensure the `mcpo` executable is available on your `$PATH`:
-   ```bash
-   uv tool install mcpo
-   ```
-
----
 
 ## Configuration
 
@@ -61,19 +39,24 @@ ORCH_MCP_PORT = "8001"
 
 ## Setup & Usage
 
-0. **Setup Virtual Environment** – set up your preferred virtual environment if desired.
 1. **Install dependencies** – ensure all dependencies are installed (configured in `setup.py`).
+                            - ensure mcpo is installed
 2. **Configure the server** – edit `agent_query/owu.env` to insert your API key, provider, and database name.
-3. **Start the orchestrator** – see [Ways to invoke the Orchestrator](#ways-to-invoke-the-orchestrator).
+3. **Start the orchestrator** – run `agent_query/orchestrator.py`
+                              - For more options see [Ways to invoke the Orchestrator](#ways-to-invoke-the-orchestrator).
 4. Open a browser and navigate to `http://localhost:8081` (the default Open WebUI address).
-5. In the Open WebUI workspace, add a new skill:
-   - Import `yabadaba_retrieval_skill`
-6. Open **Admin Settings**:
-   - Go to the *Models* subsection in Settings
-   - Choose and edit your default model (tested with gpt‑oss‑120b)
-   - Enable both *Tools* and *Skills* checkmarks
-   - Expand *Advanced Parameters* → enable *Native Function Calling*
-7. Select the model from the top‑left dropdown and begin making queries.
+5. In the Open WebUI UI, add a new skill:
+   - Expand the side bar on the left
+   - Select Workspace -> Select Skills at the top
+   - Select the dropdown next to the create button at the top right corner
+   - Import `yabadaba_retrieval_skill` as a json
+6. Tweak **Settings**:
+   - Select **User** at the bottom left of the screen, select **Admin Panel**, then select **Settings** at the top of the screen
+   - Go to the **Models** subsection in Settings
+   - Press the edit button (Pencil Icon) next to your preferred model
+   - Select both **Tools** and **Skills** and enable them respectively
+   - Expand **Advanced Parameters** → enable **Native Function Calling**
+7. Return to the main menu, select the model from the dropdown and begin making queries.
 
 ---
 
