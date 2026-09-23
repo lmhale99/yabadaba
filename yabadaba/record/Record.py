@@ -12,9 +12,6 @@ from IPython.display import display, HTML
 
 from PIL import Image
 
-# https://lxml.de/
-import lxml.etree as ET
-
 import pandas as pd
 
 # https://github.com/usnistgov/DataModelDict
@@ -614,6 +611,8 @@ class Record():
         str
             The HTML code contents.  Returned if render=False.
         """
+        # https://lxml.de/
+        import lxml.etree as ET
 
         # Build xml content
         xml_content = self.model.xml()
@@ -649,6 +648,8 @@ class Record():
         bool
             Indicating if XML is valid.
         """
+        # https://lxml.de/
+        import lxml.etree as ET
 
         # Build xml content
         if xml_content is None:
