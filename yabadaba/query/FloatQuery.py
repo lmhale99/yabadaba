@@ -93,6 +93,8 @@ class FloatQuery(Query):
         """
         # Get path and add prefix
         path = f'{prefix}{self.path}'
+        if self.unit is not None:
+            path += '.value'
 
         if value is not None:
             
@@ -246,7 +248,7 @@ class FloatQuery(Query):
             minval = -np.inf
 
         if valrange[1] is not None and self.unit is None:
-            minval = float(valrange[1])
+            maxval = float(valrange[1])
         elif valrange[1] is not None:
             maxval = float(uc.get_in_units(uc.set_in_units(valrange[1]), self.unit))
         else:
