@@ -28,6 +28,7 @@ class CDCSDatabase(Database):
                  host: str,
                  username: Optional[str] = None,
                  password: Optional[str] = None,
+                 token: Union[str, Path, None] = None,
                  auth: Optional[Tuple[str]] = None,
                  cert: Union[str, Tuple[str], None] = None, 
                  certification: Union[str, Tuple[str], None] = None,
@@ -40,43 +41,57 @@ class CDCSDatabase(Database):
         ----------
         host : str
             The host name (url) for the database.
-        username : str, optional
+        username : str or None, optional
             Username of desired account on the server. A prompt will ask for
             the username if not given.
-        password : str, optional
+        password : str or None, optional
             Password of desired account on the server.  This can either be the
             password as a str, or a str path to a file containing only the
             password.  A prompt will ask for the password if not given.
-        auth : tuple, optional
+        token : str or file path, optional
+            An API access token to the CDCS instance.  This can be specified
+            by directly inputting the token, giving a file path to a file that
+            contains only the token, or specifying an environmental path
+            variable that contains the token or file path.
+            If you use a token, set username='' to skip the prompts.
+        auth : tuple or None, optional
             Auth tuple to enable Basic/Digest/Custom HTTP Auth.  Alternative to
             giving username and password separately.
-        cert : str, optional
+        cert : str or None, optional
             if String, path to ssl client cert file (.pem). If Tuple,
             ('cert', 'key') pair.
-        certification : str, optional
+        certification : str or None, optional
             Alias for cert. Retained for compatibility.
         verify : bool or str, optional
             Either a boolean, in which case it controls whether we verify the
             server's TLS certificate, or a string, in which case it must be a
             path to a CA bundle to use. Defaults to True.
-        cdcsversion : str, optional
+        cdcsversion : str or None, optional
             For CDCS versions 2.X.X, this allows for specifying the full CDCS
             version to ensure the class methods perform the correct REST
             calls.  This can be specified as "#.#.#", or if None is given will
             default to "2.15.0".  For CDCS versions 3.X.X, this is ignored as
             version info is obtained directly from the database.
         """
-        # Fetch password from file if needed
-        try:
-            with open(password, encoding='UTF-8') as f:
-                password = f.read().strip()
-        except Exception:
-            pass
+        if token is not None:
+            if (username is not None or password is not None or auth is not None or
+                cert is not None or certification is not None):
+                raise ValueError('token authentication does not use alternate parameters')
+            self.__cdcs = CDCS.use_token(host, token=token)
+        else:                       
+        
+            # Fetch password from file if needed
+            if password is not None:
+                try:
+                    with open(password, encoding='UTF-8') as f:
+                        password = f.read().strip()
+                except Exception:
+                    pass
 
-        # Pass parameters to cdcs object
-        self.__cdcs = CDCS(host, username=username, password=password, auth=auth,
-                           cert=cert, certification=certification, verify=verify,
-                           cdcsversion=cdcsversion)
+            # Pass parameters to cdcs object
+            self.__cdcs = CDCS(host, username=username, password=password, auth=auth,
+                            cert=cert, certification=certification, verify=verify,
+                            cdcsversion=cdcsversion)
 
         # Pass host to Database initializer
         Database.__init__(self, host)
