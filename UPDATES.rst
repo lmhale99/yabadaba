@@ -1,6 +1,13 @@
 yabadaba Package Updates
 ========================
 
+0.4.1
+-----
+- Support added for token-based authentication for CDCS databases.
+- Bug fixes for float queries related to unit handling and ranged inputs.
+- Importing lxml.etree was moved to only occur in the functions where it is
+  used. On some machines, importing it was causing issues for other packages.
+
 0.4.0
 -----
 - Record objects now have improved handling and support of Value objects.
