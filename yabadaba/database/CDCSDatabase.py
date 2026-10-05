@@ -52,8 +52,8 @@ class CDCSDatabase(Database):
             An API access token to the CDCS instance.  This can be specified
             by directly inputting the token, giving a file path to a file that
             contains only the token, or specifying an environmental path
-            variable that contains the token or file path.
-            If you use a token, set username='' to skip the prompts.
+            variable that contains the token or file path.  If given, do not
+            set username, password, auth, or cert values.
         auth : tuple or None, optional
             Auth tuple to enable Basic/Digest/Custom HTTP Auth.  Alternative to
             giving username and password separately.

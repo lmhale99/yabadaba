@@ -695,7 +695,7 @@ class Record():
         if value is None or isinstance(value, TarFile):
             self.__tar = value
         else:
-            raise TypeError('tar must ne a TarFile or None')
+            raise TypeError('tar must be a TarFile or None')
 
     def clear_tar(self):
         """Closes and unsets the record's tar file to save memory"""
