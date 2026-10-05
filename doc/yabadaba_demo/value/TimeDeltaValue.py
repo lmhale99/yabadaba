@@ -6,6 +6,11 @@ import pandas as pd
 class TimeDeltaValue(Value):
     """Value object for time segments"""
 
+    @property
+    def style(self) -> str:
+        """str: The value style"""
+        return 'time_delta'
+
     def set_value_mod(self, val):
         
         # Check if value is in #text

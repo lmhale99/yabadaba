@@ -1,5 +1,4 @@
 from yabadaba.record import Record
-from yabadaba import load_value
 
 class FAQ(Record):
     """
