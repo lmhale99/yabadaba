@@ -1,6 +1,4 @@
-========
-yabadaba
-========
+# yabadaba
 
 The yabadaba package (short for "Yay, a base database!") is meant to make it
 easy to design user-friendly Python packages that can access and store content
@@ -30,8 +28,29 @@ The conceptual ideas behind yabadaba and what it intends to accomplish are
   data as users of the data do not need to become experts in every database
   infrastructure and every data schema.
 
-Package design
---------------
+## Installation
+
+The yabadaba package can easily be installed using pip or conda-forge
+
+    pip install yabadaba
+
+or
+
+    conda install -c conda-forge yabadaba
+
+Alternatively, you can download the source code from github
+
+- https://github.com/usnistgov/yabadaba is used for stable releases.
+- https://github.com/lmhale99/yabadaba is used for development.
+
+## Documentation
+
+Documentation and demonstration Notebooks for yabadaba can be found in the
+doc folder in the github repository.
+
+For support, post a issue to github or email lucas.hale@nist.gov.
+
+## Package design
 
 The yabadaba package itself is not meant to be an end-user package per-se, but
 a toolset for data generators and maintainers to easily create their own
@@ -88,21 +107,11 @@ The core base classes defined by yabadaba are
 
 - **UnitConverter** provides simple tools for managing unit conversions.
 
-Installation
-------------
+# Suggestions, contributions and additions
 
-The yabadaba package can easily be installed using pip or conda-forge
+One of the great features of yabadaba is its modularity as it makes it easy
+for users to create their own extension packages to add new functionality,
+such as new record, value and query styles.  
 
-    pip install yabadaba
-
-or
-
-    conda install -c conda-forge yabadaba
-
-Documentation
--------------
-
-Documentation and demonstration Notebooks for yabadaba can be found in the
-doc folder in the github repository.
-
-For support, post a issue to github or email lucas.hale@nist.gov.
+If you want to contribute to the core yabadaba, feel free to do so through
+the normal GitHub Issues and Pull Requests. You can submit to either repo listed in the install section, although I prefer you interact with the development repo: https://github.com/lmhale99/yabadaba.
