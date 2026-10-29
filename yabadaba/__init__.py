@@ -30,4 +30,3 @@ __all__ = ['__version__', 'typing', 'tools', 'settings', 'unitconvert',
            'value', 'load_value', 'valuemanager',
            'database', 'load_database', 'databasemanager',
            'check_modules', 'querydoc', 'valuedoc']
-__all__.sort()

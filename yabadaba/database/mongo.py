@@ -3,7 +3,7 @@ from pathlib import Path
 import shutil
 import tarfile
 from collections import OrderedDict
-from typing import Optional, Tuple, Union
+from typing import Tuple
 
 # http://www.numpy.org/
 import numpy as np
@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 
 # https://api.mongodb.com/python/current/
-import pymongo
 from pymongo import MongoClient
 from pymongo.database import Database as pymongo_Database
 from gridfs import GridFS
@@ -72,10 +71,10 @@ class MongoDatabase(Database):
         return self.__mongodb
 
     def get_records(self,
-                    style: Optional[str] = None,
+                    style: str | None = None,
                     return_df: bool = False,
-                    query: Optional[dict] = None,
-                    **kwargs) -> Union[np.ndarray, Tuple[np.ndarray, pd.DataFrame]]:
+                    query: dict | None = None,
+                    **kwargs) -> np.ndarray | Tuple[np.ndarray, pd.DataFrame]:
         """
         Produces a list of all matching records in the database.
         
@@ -141,8 +140,8 @@ class MongoDatabase(Database):
             return records
 
     def get_records_df(self,
-                       style: Optional[str] = None,
-                       query: Optional[dict] = None,
+                       style: str | None = None,
+                       query: dict | None = None,
                        **kwargs) -> pd.DataFrame:
         """
         Produces a pandas.Dataframe of all matching records in the database.
@@ -166,8 +165,8 @@ class MongoDatabase(Database):
         return self.get_records(style, query=query, return_df=True, **kwargs)[1]
 
     def get_record(self,
-                   style: Optional[str] = None,
-                   query: Optional[dict] = None,
+                   style: str | None = None,
+                   query: dict | None = None,
                    **kwargs) -> Record:
         """
         Retrieves a single matching record from the database.
@@ -214,8 +213,8 @@ class MongoDatabase(Database):
             raise ValueError('Multiple matching records found')
 
     def count_records(self,
-                      style: Optional[str] = None,
-                      query: Optional[dict] = None,
+                      style: str | None = None,
+                      query: dict | None = None,
                       **kwargs) -> int:
         """
         Retrieves a count of matching records from the database.  Much faster
@@ -254,10 +253,10 @@ class MongoDatabase(Database):
         return count
 
     def add_record(self,
-                   record: Optional[Record] = None,
-                   style: Optional[str] = None,
-                   name: Optional[str] = None,
-                   model: Union[str, DM, None] = None,
+                   record: Record | None = None,
+                   style: str | None = None,
+                   name: str | None = None,
+                   model: str | Path | DM | None = None,
                    build: bool = False,
                    verbose: bool = False) -> Record:
         """
@@ -300,6 +299,8 @@ class MongoDatabase(Database):
 
         # Create Record object if not given
         if record is None:
+            if style is None:
+                raise ValueError('record or style is required')
             record = load_record(style, model=model, name=name)
 
         # Issue a ValueError for competing kwargs
@@ -331,10 +332,10 @@ class MongoDatabase(Database):
         return record
 
     def update_record(self,
-                      record: Optional[Record] = None,
-                      style: Optional[str] = None,
-                      name: Optional[str] = None,
-                      model: Union[str, DM, None] = None,
+                      record: Record | None = None,
+                      style: str | None = None,
+                      name: str | None = None,
+                      model: str | DM | None = None,
                       build: bool = False,
                       verbose: bool = False) -> Record:
         """
@@ -408,9 +409,9 @@ class MongoDatabase(Database):
         return record
 
     def delete_record(self,
-                      record: Optional[Record] = None,
-                      style: Optional[str] = None,
-                      name: Optional[str] = None,
+                      record: Record | None = None,
+                      style: str | None = None,
+                      name: str | None = None,
                       verbose: bool = False):
         """
         Permanently deletes a record from the database. 
@@ -457,11 +458,11 @@ class MongoDatabase(Database):
             print(f'{record} deleted from {self.host}')
 
     def add_tar(self, 
-                record: Optional[Record] = None,
-                style: Optional[str] = None,
-                name: Optional[str] = None,
-                tar: Optional[bytes] = None,
-                root_dir: Optional[Path] = None):
+                record: Record | None = None,
+                style: str | None = None,
+                name: str | None = None,
+                tar: bytes | None = None,
+                root_dir: Path | None = None):
         """
         Archives and stores a folder associated with a record.
         
@@ -514,9 +515,9 @@ class MongoDatabase(Database):
                 root_dir = Path.cwd()
 
             # Make archive
-            basename = Path(root_dir, record.name)
-            filename = Path(root_dir, record.name + '.tar.gz')
-            shutil.make_archive(basename, 'gztar', root_dir=root_dir,
+            basename = Path(root_dir, str(record.name))
+            filename = Path(root_dir, f'{record.name}.tar.gz')
+            shutil.make_archive(str(basename), 'gztar', root_dir=root_dir,
                                 base_dir=record.name)
 
             # Upload archive
@@ -549,10 +550,10 @@ class MongoDatabase(Database):
             raise ValueError('tar and root_dir cannot both be given')
 
     def get_tar(self,
-                record: Optional[Record] = None,
-                style: Optional[str] = None,
-                name: Optional[str] = None,
-                raw: bool = False) -> Union[tarfile.TarFile, bytes]:
+                record: Record | None = None,
+                style: str | None = None,
+                name: str | None = None,
+                raw: bool = False) -> tarfile.TarFile | bytes:
         """
         Retrieves the tar archive associated with a record in the database.
                 
@@ -613,9 +614,9 @@ class MongoDatabase(Database):
             return tarobj
 
     def delete_tar(self, 
-                   record: Optional[Record] = None,
-                   style: Optional[str] = None,
-                   name: Optional[str] = None):
+                   record: Record | None = None,
+                   style: str | None = None,
+                   name: str | None = None):
         """
         Deletes a tar file from the database.
         
@@ -664,11 +665,11 @@ class MongoDatabase(Database):
         mongofs.delete(tar._id)
 
     def update_tar(self,
-                   record: Optional[Record] = None,
-                   style: Optional[str] = None,
-                   name: Optional[str] = None,
-                   tar: Optional[bytes] = None,
-                   root_dir: Optional[Path] = None):
+                   record: Record | None = None,
+                   style: str | None = None,
+                   name: str | None = None,
+                   tar: bytes | None = None,
+                   root_dir: Path | None = None):
         """
         Replaces an existing tar archive for a record with a new one. 
         

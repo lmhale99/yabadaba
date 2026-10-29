@@ -1,5 +1,5 @@
-__all__ = sorted(['aslist', 'iaslist', 'screen_input', 'dict_insert',
-                  'ModuleManager', 'is_uuid'])
+__all__ = ['aslist', 'iaslist', 'screen_input', 'dict_insert',
+                  'ModuleManager', 'is_uuid']
 
 # Relative imports
 from cdcs import aslist, iaslist

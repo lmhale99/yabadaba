@@ -1,5 +1,3 @@
-# Standard Python libraries
-from typing import Optional
 
 # Relative imports
 from ..tools import screen_input, ModuleManager
@@ -10,11 +8,11 @@ from .. import Settings
 
 __all__ = ['load_database']
 
-def load_database(name: Optional[str] = None,
-                  style: Optional[str] = None,
-                  host: Optional[str] = None,
-                  settings: Optional[Settings.Settings] = None, 
-                  databasemanager: Optional[ModuleManager] = None,
+def load_database(name: str | None = None,
+                  style: str | None = None,
+                  host: str | None = None,
+                  settings: Settings.Settings | None = None, 
+                  databasemanager: ModuleManager | None = None,
                   **kwargs) -> Database:
     """
     Loads a database object.  Can be either loaded from stored settings or

@@ -3,7 +3,7 @@ import types
 import functools
 from pathlib import Path
 from importlib import resources
-from typing import Union, Optional, Any, Type, Literal
+from typing import Any, Type, Literal, TYPE_CHECKING
 import io
 from tarfile import TarFile
 
@@ -20,6 +20,9 @@ from DataModelDict import DataModelDict as DM
 from .. import load_query, load_value
 from ..value import Value
 
+if TYPE_CHECKING:
+    from ..database import Database
+
 __all__ = ['Record']
 
 class Record():
@@ -29,11 +32,11 @@ class Record():
     """
 
     def __init__(self,
-                 model: Union[str, io.IOBase, DM, None] = None,
-                 name: Optional[str] = None,
-                 database = None,
+                 model: str | io.IOBase | DM | None = None,
+                 name: str | None = None,
+                 database: Database | None = None,
                  noname: bool = False,
-                 extensible: Optional[bool] = None,
+                 extensible: bool | None = None,
                  **kwargs):
         """
         Initializes a Record object for a given style.
@@ -95,16 +98,16 @@ class Record():
         pass
 
     def _add_value(self,
-                   style: Union[str, Type[Value]],
+                   style: str | Type[Value],
                    name: str,
-                   defaultvalue: Optional[Any] = None,
+                   defaultvalue: Any | None = None,
                    valuerequired: bool = False,
-                   allowedvalues: Optional[tuple] = None,
+                   allowedvalues: tuple | None = None,
                    allowcustomvalue: bool = False,
-                   metadatakey: Union[str, Literal[False], None] = None,
-                   metadataparent: Optional[str] = None,
-                   modelpath: Union[str, Literal[False], None] = None,
-                   description: Optional[str] = None,
+                   metadatakey: str | Literal[False] | None = None,
+                   metadataparent: str | None = None,
+                   modelpath: str | Literal[False] | None = None,
+                   description: str | None = None,
                    **kwargs):
         """
         Method to add Value objects when defining the class.  This should only be
@@ -178,7 +181,7 @@ class Record():
         else:
             raise TypeError('style must be Value style or Value class')
 
-    def __getattribute__(self, name):
+    def __getattribute__(self, name: str):
         """Adjusted to get value attributes from Value objects"""        
         if name != '_Record__value_dict' and hasattr(self,'_Record__value_dict') and name in self.__value_dict:
             return self.__value_dict[name].value    
@@ -223,8 +226,8 @@ class Record():
         return sorted(set(list(super().__dir__()) + list(self.valuenames)))
 
     def load_model(self,
-                   model: Union[str, io.IOBase, DM],
-                   name: Optional[str] = None):
+                   model: str | io.IOBase | DM,
+                   name: str | None = None):
         """
         Loads record contents from a given model.
 
@@ -308,7 +311,7 @@ class Record():
         return f'{self.style} record named {self.name}'
 
     @property
-    def style(self):
+    def style(self) -> str:
         """The Record's style"""
         # Set default based on (grand)parent module's name
         modulepath = self.__module__.split('.')
@@ -340,7 +343,7 @@ class Record():
         return resources.read_binary(*self.xsl_filename)
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         """str: The record's name."""
         if self.__name is not None or self.noname:
             return self.__name
@@ -348,7 +351,7 @@ class Record():
             raise AttributeError('record name not set')
 
     @name.setter
-    def name(self, value: Optional[str]):
+    def name(self, value: str | None):
         if value is not None:
             if self.noname:
                 raise TypeError('name turned off for this record')
@@ -357,7 +360,7 @@ class Record():
             self.__name = None
 
     @property
-    def defaultname(self) -> Optional[str]:
+    def defaultname(self) -> str | None:
         """str: The name to default to, usually based on other properties"""
         return None
 
@@ -410,7 +413,7 @@ class Record():
         raise NotImplementedError('Specific to subclasses')
 
     @property
-    def modelsortkeys(self) -> Optional[list]:
+    def modelsortkeys(self) -> list | None:
         """list or None: Explicit order of subelement keys to use. If
         None, then subelement order is determined by value definitions."""
         # Default - no key resorting
@@ -431,7 +434,7 @@ class Record():
         """
         self.load_model(model=self.model, name=self.name)
 
-    def _set_model(self, model: Union[DM, io.IOBase, str]):
+    def _set_model(self, model: DM | io.IOBase | str):
         """
         Sets model content - called by build_model() and load_model() to update
         content.  Use load_model() if you are passing in an external model.
@@ -552,7 +555,7 @@ class Record():
 
     def pandasfilter(self,
                      dataframe: pd.DataFrame,
-                     name: Union[str, list, None] = None,
+                     name: str | list | None = None,
                      **kwargs) -> pd.Series:
         """
         Filters a pandas.DataFrame based on kwargs values for the record style.
@@ -587,7 +590,7 @@ class Record():
         return matches
 
     def mongoquery(self,
-                   name: Union[str, list, None] = None,
+                   name: str | list | None = None,
                    **kwargs) -> dict:
         """
         Builds a Mongo-style query based on kwargs values for the record style.
@@ -652,7 +655,7 @@ class Record():
         return querydict
 
     def html(self,
-             render: bool = False) -> Optional[str]:
+             render: bool = False) -> str | None:
         """
         Returns an HTML representation of the object.
         
@@ -689,7 +692,7 @@ class Record():
             return html_content
 
     def valid_xml(self,
-                  xml_content: Optional[str] = None) -> bool:
+                  xml_content: str | None = None) -> bool:
         """
         Tests if XML content is valid with schema.
         
@@ -720,12 +723,12 @@ class Record():
         return schema.validate(xml)
 
     @property
-    def database(self):
+    def database(self) -> Database | None:
         """yabadaba.Database or None: The default Database associated with the Record"""
         return self.__database
 
     @database.setter
-    def database(self, value):
+    def database(self, value: Database | None):
         if value is None or hasattr(value, 'get_records'):
             self.__database = value
         else:
@@ -743,7 +746,9 @@ class Record():
             raise ValueError('tar not loaded and no database set')
 
         # Fetch tar from database, set to cache and return
-        self.tar = self.database.get_tar(record=self)
+        tar = self.database.get_tar(record=self)
+        assert isinstance(tar, TarFile), 'get_tar should return TarFile!'
+        self.tar = tar
         
         if self.__tar is None:
             raise ValueError('No tar file found!')
@@ -751,7 +756,7 @@ class Record():
         return self.__tar
 
     @tar.setter
-    def tar(self, value: Optional[TarFile]):
+    def tar(self, value: TarFile | None):
         if value is None or isinstance(value, TarFile):
             self.__tar = value
         else:
@@ -764,8 +769,8 @@ class Record():
             self.tar = None
 
     def get_file(self,
-                 filename: Union[str, Path],
-                 localroot: Union[str, Path, None] = None,
+                 filename: str | Path,
+                 localroot: str | Path | None = None,
                  local: bool = True):
         """
         Retrieves a file either locally or from the record's tar archive.
@@ -817,10 +822,10 @@ class Record():
             raise ValueError(f'{filename} exists in tar, but is not a file')
 
     def display_image(self,
-                      filename: Union[str, Path],
-                      localroot: Union[str, Path, None] = None,
-                      width: Optional[int] = None,
-                      height: Optional[int] = None):
+                      filename: str | Path,
+                      localroot: str | Path | None = None,
+                      width: int | None = None,
+                      height: int | None = None):
         """
         For IPython-based environments, this retrieves an image file either
         locally or from within the record's tar archive and displays it.

@@ -1,10 +1,12 @@
-from typing import Optional, Union, Any, Literal
+from typing import Any, Literal, TYPE_CHECKING
 
 import numpy as np
-import numpy.typing as npt
 
 from . import Value
 from .. import unitconvert as uc
+
+if TYPE_CHECKING:
+    from ..record import Record
 
 __all__ = ['FloatArrayValue']
 
@@ -12,17 +14,17 @@ class FloatArrayValue(Value):
     
     def __init__(self,
                  name: str,
-                 record,
-                 defaultvalue: Optional[Any] = None,
+                 record: Record,
+                 defaultvalue: Any | None = None,
                  valuerequired: bool = False,
-                 allowedvalues: Optional[tuple] = None,
+                 allowedvalues:tuple | None = None,
                  allowcustomvalue: bool = False,
-                 metadatakey: Union[str, Literal[False], None] = None,
-                 metadataparent: Optional[str] = None,
-                 modelpath: Union[str, Literal[False], None] = None,
-                 description: Optional[str] = None,
-                 unit: Optional[str] = None,
-                 shape: Optional[tuple] = None):
+                 metadatakey: str | Literal[False] | None = None,
+                 metadataparent: str | None = None,
+                 modelpath: str | Literal[False] | None = None,
+                 description: str | None = None,
+                 unit: str | None = None,
+                 shape: tuple | None = None):
         """
         Initialize an FloatArrayValue object for managing arrays of floats.
 
@@ -93,12 +95,12 @@ class FloatArrayValue(Value):
                          modelpath=modelpath, description=description)
         
     @property
-    def unit(self) -> Optional[str]:
+    def unit(self) -> str | None:
         """str or None: The units to use when saving the value to the model."""
         return self.__unit
     
     @property
-    def shape(self) -> Optional[tuple]:
+    def shape(self) -> tuple | None:
         """tuple or None: The required shape of the array."""
         return self.__shape
 

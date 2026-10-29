@@ -1,6 +1,6 @@
 
 # Standard Python libraries
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 
@@ -18,11 +18,11 @@ class FloatQuery(Query):
     """Class for querying float fields for closely matching values or ranges of values"""
 
     def __init__(self,
-                 name: Optional[str] = None,
-                 parent: Optional[str] = None,
-                 path: Optional[str] = None,
+                 name: str | None = None,
+                 parent: str | None = None,
+                 path: str | None = None,
                  description: str = '',
-                 unit: Optional[str] = None,
+                 unit: str | None = None,
                  atol: float = 1e-5):
         """
         Query initialization
@@ -65,7 +65,7 @@ class FloatQuery(Query):
         return 'float, tuple or list, optional'
 
     @property
-    def unit(self) -> Optional[str]:
+    def unit(self) -> str | None:
         """str : The unit to use for the query value"""
         return self.__unit
 
@@ -117,10 +117,10 @@ class FloatQuery(Query):
                 else:
                     if self.unit is None:
                         # Make sure value is float
-                        v = float(v)
+                        v = float(v) # type: ignore
                     else:
                         # Convert values to working units, then to database units
-                        v = float(uc.get_in_units(uc.set_in_units(v), self.unit))
+                        v = float(uc.get_in_units(uc.set_in_units(v), self.unit)) # type: ignore
 
                     # Add query operation for ranged search
                     newquery['$or'].append({path:{'$gte': v - self.atol, '$lte' : v + self.atol}})
@@ -151,7 +151,7 @@ class FloatQuery(Query):
         def apply_function(series: pd.Series,
                            name: str,
                            value: Any,
-                           parent: Optional[str]) -> bool:
+                           parent: str | None) -> bool:
             """
             function for pandas.DataFrame.apply with axis=1
             
@@ -188,9 +188,9 @@ class FloatQuery(Query):
                     valranges.append(v)
                 else:
                     if self.unit is None:
-                        val.append(float(v))
+                        val.append(float(v)) # type: ignore
                     else:
-                        val.append(float(uc.get_in_units(uc.set_in_units(v), self.unit)))
+                        val.append(float(uc.get_in_units(uc.set_in_units(v), self.unit))) # type: ignore
 
             if parent is None:
 

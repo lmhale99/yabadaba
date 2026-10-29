@@ -2,7 +2,6 @@
 from pathlib import Path
 import json
 from copy import deepcopy
-from typing import Union, Optional
 
 # Relative imports
 from yabadaba.tools import screen_input
@@ -109,7 +108,7 @@ class Settings():
         self.load()
 
     def set_directory(self,
-                      directory: Union[str, Path] = None,
+                      directory: str | Path | None = None,
                       move: bool = True,
                       prompt: bool = True):
         """
@@ -272,9 +271,9 @@ class Settings():
         return list(self.databases.keys())
 
     def set_database(self,
-                     name: Optional[str] = None,
-                     style: Optional[str] = None,
-                     host: Optional[str] = None,
+                     name: str | None = None,
+                     style: str | None = None,
+                     host: str | None = None,
                      prompt: bool = True,
                      **kwargs):
         """
@@ -363,7 +362,7 @@ class Settings():
         self.save()
     
     def unset_database(self,
-                       name: Optional[str] = None,
+                       name: str | None = None,
                        prompt: bool = True):
         """
         Deletes the settings for a pre-defined database from the settings file.

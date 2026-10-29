@@ -1,6 +1,5 @@
 
-# Standard Python libraries
-from typing import Any, Optional
+from typing import Any
 
 import pandas as pd
 class Query():
@@ -10,9 +9,9 @@ class Query():
     """
     
     def __init__(self,
-                 name: Optional[str] = None,
-                 parent: Optional[str] = None,
-                 path: Optional[str] = None,
+                 name: str | None = None,
+                 parent: str | None = None,
+                 path: str | None = None,
                  description: str = ''):
         """
         Query initialization
@@ -68,7 +67,7 @@ class Query():
         return self.__name
 
     @name.setter
-    def name(self, value: Optional[str]):
+    def name(self, value: str | None):
         if value is None:
             self.__name = None
         elif isinstance(value, str):
@@ -77,12 +76,12 @@ class Query():
             raise TypeError('name must be None or a string')
 
     @property
-    def parent(self) -> Optional[str]:
+    def parent(self) -> str | None:
         """str or None: The parent metadata key, if any."""
         return self.__parent
 
     @parent.setter
-    def parent(self, value: Optional[str]):
+    def parent(self, value: str | None):
         if value is None:
             self.__parent = None
         elif isinstance(value, str):
@@ -98,7 +97,7 @@ class Query():
         return self.__path
 
     @path.setter
-    def path(self, value: Optional[str]):
+    def path(self, value: str | None):
         if value is None:
             self.__path = None
         elif isinstance(value, str):

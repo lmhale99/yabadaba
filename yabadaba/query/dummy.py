@@ -1,6 +1,6 @@
 
 # Standard Python libraries
-from typing import Any, Optional
+from typing import Any
 
 import pandas as pd
 
@@ -15,11 +15,11 @@ class DummyQuery(Query):
     """Class for a query field that doesn't perform a database query"""
 
     def __init__(self,
-                 name: Optional[str] = None,
-                 parent: Optional[str] = None,
-                 path: Optional[str] = None,
+                 name: str | None = None,
+                 parent: str | None = None,
+                 path: str | None = None,
                  description: str = '',
-                 value: Optional[Any] = None):
+                 value: str | None = None):
         """
         Query initialization
 

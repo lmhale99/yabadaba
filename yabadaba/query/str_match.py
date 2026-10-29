@@ -1,14 +1,11 @@
 
-# Standard Python libraries
-from typing import Any, Optional
+from typing import Any
 
 import pandas as pd
 
 # Relative imports
 from ..tools import aslist, iaslist
 from .Query import Query
-
-__all__ = ['StrMatchQuery']
 
 class StrMatchQuery(Query):
     """Class for querying str fields for specific values"""
@@ -73,7 +70,7 @@ class StrMatchQuery(Query):
         def apply_function(series: pd.Series,
                            name: str,
                            value: Any,
-                           parent: Optional[str]) -> bool:
+                           parent: str | None) -> bool:
             """
             function for pandas.DataFrame.apply with axis=1
             

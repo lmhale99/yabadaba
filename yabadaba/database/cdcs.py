@@ -3,7 +3,7 @@ from pathlib import Path
 import shutil
 import tarfile
 from io import BytesIO
-from typing import Optional, Tuple, Union
+from typing import Tuple
 
 # https://github.com/usnistgov/pycdcs
 from cdcs import CDCS
@@ -28,14 +28,14 @@ class CDCSDatabase(Database):
 
     def __init__(self,
                  host: str,
-                 username: Optional[str] = None,
-                 password: Optional[str] = None,
-                 token: Union[str, Path, None] = None,
-                 auth: Optional[Tuple[str]] = None,
-                 cert: Union[str, Tuple[str], None] = None, 
-                 certification: Union[str, Tuple[str], None] = None,
-                 verify: Optional[bool] = True,
-                 cdcsversion: Optional[str] = None):
+                 username: str | None = None,
+                 password: str | None = None,
+                 token: str | Path | None = None,
+                 auth: Tuple[str] | None = None,
+                 cert: str | Tuple[str] | None = None, 
+                 certification: str | Tuple[str] | None = None,
+                 verify: bool | None = True,
+                 cdcsversion: str | None = None):
         """
         Initializes a database of style curator.
         
@@ -109,14 +109,14 @@ class CDCSDatabase(Database):
         return self.__cdcs
 
     def get_records(self,
-                    style: Optional[str] = None,
+                    style: str | None = None,
                     return_df: bool = False,
-                    name: Union[str, list, None] = None,
-                    query: Optional[dict] = None,
-                    keyword: Optional[str] = None,
-                    page: Optional[int] = None,
+                    name: str | list | None = None,
+                    query: dict | None = None,
+                    keyword: str | None = None,
+                    page: int | None = None,
                     progress_bar: bool = True,
-                    **kwargs) -> Union[np.ndarray, Tuple[np.ndarray, pd.DataFrame]]:
+                    **kwargs) -> np.ndarray | Tuple[np.ndarray, pd.DataFrame]:
         """
         Produces a list of all matching records in the database.
         
@@ -174,7 +174,7 @@ class CDCSDatabase(Database):
                                    keyword=keyword, page=page,
                                    progress_bar=progress_bar)
             if len(data) > 0:
-                records.extend(data.apply(build_records, axis=1))
+                records.extend(data.apply(build_records, axis=1)) # type: ignore
         records = np.array(records)
 
         # Build df
@@ -198,11 +198,11 @@ class CDCSDatabase(Database):
             return records
 
     def get_records_df(self,
-                       style: Optional[str] = None,
-                       name: Union[str, list, None] = None,
-                       query: Optional[dict] = None,
-                       keyword: Optional[str] = None,
-                       page: Optional[int] = None,
+                       style: str | None = None,
+                       name: str | list | None = None,
+                       query: dict | None = None,
+                       keyword: str | None = None,
+                       page: int | None = None,
                        progress_bar: bool = True,
                        **kwargs) -> pd.DataFrame:
         """
@@ -235,10 +235,10 @@ class CDCSDatabase(Database):
                                 return_df=True, **kwargs)[1]
 
     def get_record(self, 
-                   style: Optional[str] = None,
-                   name: Union[str, list, None] = None,
-                   query: Optional[dict] = None,
-                   keyword: Optional[str] = None,
+                   style: str | None = None,
+                   name: str | list | None = None,
+                   query: dict | None = None,
+                   keyword: str | None = None,
                    **kwargs) -> Record:
         """
         Returns a single matching record from the database.
@@ -290,10 +290,10 @@ class CDCSDatabase(Database):
             raise ValueError('Multiple matching records found')
     
     def count_records(self,
-                      style: Optional[str] = None,
-                      name: Union[str, list, None] = None,
-                      query: Optional[dict] = None,
-                      keyword: Optional[str] = None,
+                      style: str | None = None,
+                      name: str | list | None = None,
+                      query: dict | None = None,
+                      keyword: str | None = None,
                       **kwargs) -> int:
         """
         Retrieves a count of matching records from the database.  Much faster
@@ -343,13 +343,13 @@ class CDCSDatabase(Database):
         return count
 
     def add_record(self,
-                   record: Optional[Record] = None,
-                   style: Optional[str] = None,
-                   name: Optional[str] = None,
-                   model: Union[str, DM, None] = None,
+                   record: Record | None = None,
+                   style: str | None = None,
+                   name: str | None = None,
+                   model: str | DM | None = None,
                    build: bool = False,
                    verbose: bool = False,
-                   workspace: Union[str, pd.Series, None] = None,
+                   workspace: str | pd.Series | None = None,
                    auto_set_pid_off: bool = False) -> Record:
         """
         Adds a new record to the database.
@@ -402,6 +402,8 @@ class CDCSDatabase(Database):
 
         # Create Record object if not given
         if record is None:
+            if style is None:
+                raise ValueError('record or style is required')
             record = load_record(style, model=model, name=name)
 
         # Issue a ValueError for competing kwargs
@@ -428,13 +430,13 @@ class CDCSDatabase(Database):
         return record
 
     def update_record(self,
-                      record: Optional[Record] = None,
-                      style: Optional[str] = None,
-                      name: Optional[str] = None,
-                      model: Union[str, DM, None] = None,
+                      record: Record | None = None,
+                      style: str | None = None,
+                      name: str | None = None,
+                      model: str | DM | None = None,
                       build: bool = False,
                       verbose: bool = False,
-                      workspace: Union[str, pd.Series, None] = None,
+                      workspace: str | pd.Series | None = None,
                       auto_set_pid_off: bool = False) -> Record:
         """
         Replaces an existing record with a new record of matching name and 
@@ -522,9 +524,9 @@ class CDCSDatabase(Database):
         return record
 
     def delete_record(self,
-                      record: Optional[Record] = None,
-                      style: Optional[str] = None,
-                      name: Optional[str] = None,
+                      record: Record | None = None,
+                      style: str | None = None,
+                      name: str | None = None,
                       verbose: bool = False):
         """
         Permanently deletes a record from the database.  Will issue an error 
@@ -562,8 +564,8 @@ class CDCSDatabase(Database):
             print(f'{record} deleted from {self.host}')
 
     def assign_records(self,
-                       records: Union[Record, list],
-                       workspace: Union[str, pd.Series],
+                       records: Record | list,
+                       workspace: str | pd.Series,
                        verbose: bool = False):
         """
         Assigns one or more records to a CDCS workspace.
@@ -586,11 +588,11 @@ class CDCSDatabase(Database):
                 print(f'{record} assigned to workspace {workspace}')
 
     def add_tar(self, 
-                record: Optional[Record] = None,
-                style: Optional[str] = None,
-                name: Optional[str] = None,
-                tar: Optional[bytes] = None,
-                root_dir: Optional[Path] = None):
+                record: Record | None = None,
+                style: str | None = None,
+                name: str | None = None,
+                tar: bytes | None = None,
+                root_dir: Path | None = None):
         """
         Archives and stores a folder associated with a record.
         
@@ -643,9 +645,9 @@ class CDCSDatabase(Database):
                 root_dir = Path.cwd()
 
             # Make archive
-            basename = Path(root_dir, record.name)
-            filename = Path(root_dir, record.name + '.tar.gz')
-            shutil.make_archive(basename, 'gztar', root_dir=root_dir,
+            basename = Path(root_dir, str(record.name))
+            filename = Path(root_dir, f'{record.name}.tar.gz')
+            shutil.make_archive(str(basename), 'gztar', root_dir=root_dir,
                                 base_dir=record.name)
 
             # Upload archive
@@ -664,7 +666,7 @@ class CDCSDatabase(Database):
 
         # Upload pre-existing tar object
         elif root_dir is None:
-            filename = Path(record.name + '.tar.gz')
+            filename = Path(f'{record.name}.tar.gz')
 
             # Upload archive
             tries = 0
@@ -681,10 +683,10 @@ class CDCSDatabase(Database):
             raise ValueError('tar and root_dir cannot both be given')
 
     def get_tar(self,
-                record: Optional[Record] = None,
-                style: Optional[str] = None,
-                name: Optional[str] = None,
-                raw: bool = False) -> Union[tarfile.TarFile, bytes]:
+                record: Record | None = None,
+                style: str | None = None,
+                name: str | None = None,
+                raw: bool = False) -> tarfile.TarFile | bytes:
         """
         Retrieves the tar archive associated with a record in the database.
         
@@ -720,7 +722,7 @@ class CDCSDatabase(Database):
         elif style is not None or name is not None:
             raise TypeError('kwargs style and name cannot be given with kwarg record')
 
-        filename = Path(record.name + '.tar.gz')
+        filename = f'{record.name}.tar.gz'
 
         # Download tar file
         tardata = self.cdcs.get_blob_contents(filename=filename)
@@ -734,9 +736,9 @@ class CDCSDatabase(Database):
             return tar
 
     def delete_tar(self, 
-                   record: Optional[Record] = None,
-                   style: Optional[str] = None,
-                   name: Optional[str] = None):
+                   record: Record | None = None,
+                   style: str | None = None,
+                   name: str | None = None):
         """
         Deletes a tar file from the database.
         
@@ -760,16 +762,16 @@ class CDCSDatabase(Database):
         elif style is not None or name is not None:
             raise TypeError('kwargs style and name cannot be given with kwarg record')
 
-        filename = Path(record.name + '.tar.gz')
+        filename = f'{record.name}.tar.gz'
 
         self.cdcs.delete_blob(filename=filename)
 
     def update_tar(self,
-                   record: Optional[Record] = None,
-                   style: Optional[str] = None,
-                   name: Optional[str] = None,
-                   tar: Optional[bytes] = None,
-                   root_dir: Optional[Path] = None):
+                   record: Record | None = None,
+                   style: str | None = None,
+                   name: str | None = None,
+                   tar: bytes | None = None,
+                   root_dir: Path | None = None):
         """
         Archives and stores a folder associated with a record.
         

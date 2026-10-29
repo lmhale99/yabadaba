@@ -1,13 +1,10 @@
-# Standard Python libraries
-from typing import Optional
-
 from . import Query, querymanager
 
 def load_query(style: str,
-               name: Optional[str] = None,
-               parent: Optional[str] = None,
-               path: Optional[str] = None,
-               description: Optional[str] = None,
+               name: str | None = None,
+               parent: str | None = None,
+               path: str | None = None,
+               description: str | None = None,
                **kwargs) -> Query:
     """
     Loads a Query subclass associated with a given query style.

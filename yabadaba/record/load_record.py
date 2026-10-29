@@ -1,15 +1,18 @@
-# Standard Python libraries
-from typing import Optional, Union
+from typing import TYPE_CHECKING
+from pathlib import Path
 
 from DataModelDict import DataModelDict as DM
 
 from . import recordmanager, Record
 
+if TYPE_CHECKING:
+    from ..database import Database
+
 # Define load_record
 def load_record(style: str,
-                model: Union[str, DM, None] = None,
-                name: Optional[str] = None,
-                database = None,
+                model: str | Path | DM | None = None,
+                name: str | None = None,
+                database: Database | None = None,
                 **kwargs) -> Record:
     """
     Loads a Record subclass associated with a given record style.

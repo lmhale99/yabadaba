@@ -1,10 +1,11 @@
-from typing import Optional, Union, Any, Literal
-
-from DataModelDict import DataModelDict as DM
+from typing import Any, Literal, TYPE_CHECKING
 
 from ..query import load_query
 from . import Value
 from .. import unitconvert as uc
+
+if TYPE_CHECKING:
+    from ..record import Record
 
 __all__ = ['FloatValue']
 
@@ -12,16 +13,16 @@ class FloatValue(Value):
     
     def __init__(self,
                  name: str,
-                 record,
-                 defaultvalue: Optional[Any] = None,
+                 record: Record,
+                 defaultvalue: Any | None = None,
                  valuerequired: bool = False,
-                 allowedvalues: Optional[tuple] = None,
+                 allowedvalues:tuple | None = None,
                  allowcustomvalue: bool = False,
-                 metadatakey: Union[str, Literal[False], None] = None,
-                 metadataparent: Optional[str] = None,
-                 modelpath: Union[str, Literal[False], None] = None,
-                 description: Optional[str] = None,
-                 unit: Optional[str] = None):
+                 metadatakey: str | Literal[False] | None = None,
+                 metadataparent: str | None = None,
+                 modelpath: str | Literal[False] | None = None,
+                 description: str | None = None,
+                 unit: str | None = None):
         """
         Initialize a FloatValue object.
 
@@ -75,7 +76,7 @@ class FloatValue(Value):
                          modelpath=modelpath, description=description)
         
     @property
-    def unit(self) -> Optional[str]:
+    def unit(self) -> str | None:
         """str or None: The units to use when saving the value to the model."""
         return self.__unit
 

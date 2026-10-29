@@ -1,7 +1,3 @@
-from typing import Optional, Union, Any
-
-from DataModelDict import DataModelDict as DM
-
 import numpy as np
 
 from ..query import load_query
@@ -39,7 +35,7 @@ class MonthValue(Value):
             return int(val)
         
     @property
-    def fullname(self) -> Optional[str]:
+    def fullname(self) -> str | None:
         """str: The full month name"""
         if self.value is None:
             return None
@@ -51,7 +47,7 @@ class MonthValue(Value):
         return converter[self.value]
     
     @property
-    def shortname(self) -> Optional[str]:
+    def shortname(self) -> str | None:
         """str: The 3 letter short name for the month"""
         if self.value is None:
             return None
@@ -63,7 +59,7 @@ class MonthValue(Value):
         return converter[self.value]
     
     @property
-    def xsd_gmonth(self) -> Optional[str]:
+    def xsd_gmonth(self) -> str | None:
         """str: the xsd:gMonth format of the month"""
         if self.value is None:
             return None

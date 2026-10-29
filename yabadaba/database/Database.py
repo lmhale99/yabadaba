@@ -1,7 +1,10 @@
 # Standard Python libraries
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Tuple
 import tarfile
+
+import numpy as np
+import numpy.typing as npt
 
 from tqdm import tqdm
 
@@ -57,9 +60,9 @@ class Database():
         return self.__host
 
     def get_records(self, 
-                    style: Optional[str] = None,
+                    style: str | None = None,
                     return_df: bool = False,
-                    **kwargs) -> Union[list, Tuple[list, pd.DataFrame]]:
+                    **kwargs) -> npt.NDArray | Tuple[npt.NDArray, pd.DataFrame]:
         """
         Produces a list of all matching records in the database.
         
@@ -90,7 +93,7 @@ class Database():
         raise AttributeError('get_records not defined for Database style')
 
     def get_record(self,
-                   style: Optional[str] = None,
+                   style: str | None = None,
                    **kwargs) -> Record:
         """
         Returns a single matching record from the database.  Issues an error
@@ -117,7 +120,7 @@ class Database():
         raise AttributeError('get_record not defined for Database style')
 
     def get_records_df(self,
-                       style: Optional[str] = None,
+                       style: str | None = None,
                        **kwargs) -> pd.DataFrame:
         """
         Produces a pandas.DataFrame of all matching records in the database.
@@ -143,7 +146,7 @@ class Database():
         raise AttributeError('get_records_df not defined for Database style')
 
     def count_records(self,
-                      style: Optional[str] = None,
+                      style: str | None = None,
                       **kwargs) -> int:
         """
         Retrieves a count of matching records from the database.  Depending on the
@@ -171,10 +174,10 @@ class Database():
         raise AttributeError('count_records not defined for Database style')
 
     def retrieve_record(self,
-                        style: Optional[str] = None,
-                        dest: Optional[Path] = None,
+                        style: str | None = None,
+                        dest: Path | None = None,
                         format: str = 'json',
-                        indent: Optional[int] = 4,
+                        indent: int | None = 4,
                         verbose: bool = False,
                         **kwargs):
         """
@@ -229,10 +232,10 @@ class Database():
             raise ValueError('Invalid format: must be json or xml.')
 
     def add_record(self,
-                   record: Optional[Record] = None,
-                   style: Optional[str] = None,
-                   name: Optional[str] = None,
-                   model: Union[str, DM, None] = None,
+                   record: Record | None = None,
+                   style: str | None = None,
+                   name: str | None = None,
+                   model: str | DM | None = None,
                    build: bool = False,
                    verbose: bool = False) -> Record:
         """
@@ -274,10 +277,10 @@ class Database():
         raise AttributeError('add_record not defined for Database style')
 
     def update_record(self,
-                      record: Optional[Record] = None,
-                      style: Optional[str] = None,
-                      name: Optional[str] = None,
-                      model: Union[str, DM, None] = None,
+                      record: Record | None = None,
+                      style: str | None = None,
+                      name: str | None = None,
+                      model: str | DM | None = None,
                       build: bool = False,
                       verbose: bool = False) -> Record:
         """
@@ -319,9 +322,9 @@ class Database():
         raise AttributeError('update_record not defined for Database style')
 
     def delete_record(self,
-                      record: Optional[Record] = None,
-                      style: Optional[str] = None,
-                      name: Optional[str] = None,
+                      record: Record | None = None,
+                      style: str | None = None,
+                      name: str | None = None,
                       verbose: bool = False):
         """
         Permanently deletes a record from the database.
@@ -347,10 +350,10 @@ class Database():
         raise AttributeError('delete_record not defined for Database style')
 
     def get_tar(self,
-                record: Optional[Record] = None,
-                style: Optional[str] = None,
-                name: Optional[str] = None,
-                raw: bool = False) -> Union[tarfile.TarFile, bytes]:
+                record: Record | None = None,
+                style: str | None = None,
+                name: str | None = None,
+                raw: bool = False) -> tarfile.TarFile | bytes:
         """
         Retrieves the tar archive associated with a record in the database.
         
@@ -380,11 +383,11 @@ class Database():
         raise AttributeError('get_tar not defined for Database style')
 
     def add_tar(self, 
-                record: Optional[Record] = None,
-                style: Optional[str] = None,
-                name: Optional[str] = None,
-                tar: Optional[bytes] = None,
-                root_dir: Optional[Path] = None):
+                record: Record | None = None,
+                style: str | None = None,
+                name: str | None = None,
+                tar: bytes | None = None,
+                root_dir: Path | None = None):
         """
         Archives and stores a folder associated with a record.
         
@@ -416,11 +419,11 @@ class Database():
         raise AttributeError('add_tar not defined for Database style')
 
     def update_tar(self,
-                   record: Optional[Record] = None,
-                   style: Optional[str] = None,
-                   name: Optional[str] = None,
-                   tar: Optional[bytes] = None,
-                   root_dir: Optional[Path] = None):
+                   record: Record | None = None,
+                   style: str | None = None,
+                   name: str | None = None,
+                   tar: bytes | None = None,
+                   root_dir: Path | None = None):
         """
         Replaces an existing tar archive for a record with a new one.
         
@@ -451,9 +454,9 @@ class Database():
         raise AttributeError('update_tar not defined for Database style')
 
     def delete_tar(self, 
-                   record: Optional[Record] = None,
-                   style: Optional[str] = None,
-                   name: Optional[str] = None):
+                   record: Record | None = None,
+                   style: str | None = None,
+                   name: str | None = None):
         """
         Deletes a tar file from the database.
         
@@ -477,8 +480,8 @@ class Database():
 
     def copy_records(self,
                      dest,
-                     record_style: Optional[str]  = None,
-                     records: Optional[list] = None,
+                     record_style: str | None  = None,
+                     records: npt.ArrayLike | None = None,
                      includetar: bool = True,
                      overwrite: bool = False):
         """
@@ -512,11 +515,16 @@ class Database():
                 raise ValueError('record_style and records cannot both be given')
 
             # Retrieve records from self
-            records = self.get_records(style=record_style)
+            recs = self.get_records(style=record_style)
+            assert isinstance(recs, np.ndarray)
+            records = recs
 
+        
         elif records is None:
             # Set empty list if record_style is still None and no records given
-            records = []
+            records = np.array([])
+        else:
+            records = np.asanyarray(records)
 
         print(len(records), 'records to try to copy')
 
@@ -543,7 +551,7 @@ class Database():
 
                     # Get folder if it exists
                     try:
-                        root_dir = self.get_folder(record=record).parent
+                        root_dir = self.get_folder(record=record).parent # type: ignore
                     except:
                         pass
                     else:
@@ -573,8 +581,8 @@ class Database():
             print(tar_count, 'tars added/updated')
 
     def destroy_records(self,
-                        record_style: Optional[str] = None,
-                        records: Optional[list] = None,
+                        record_style: str | None = None,
+                        records: npt.ArrayLike | None = None,
                         prompt: bool = True):
         """
         Permanently deletes multiple records and their associated tars all at
@@ -608,7 +616,10 @@ class Database():
 
         elif records is None:
             # Set empty list if record_style is still None and no records given
-            records = []
+            records = np.array([])
+
+        else:
+            records = np.asanyarray(records)
 
         print(f'{len(records)} records found to be destroyed')
 
@@ -634,7 +645,7 @@ class Database():
                         pass
                 if self.style == 'local':
                     for record_style in record_styles:
-                        cache = self.cache(record_style, refresh=True)
+                        cache = self.cache(record_style, refresh=True) # type: ignore
                 print(count, 'records successfully deleted')
 
     def select_record_style(self) -> str:
@@ -670,7 +681,7 @@ class Database():
         return load_record(style).querydoc
 
     def record_valuenames(self,
-                          style: str) -> list:
+                          style: str) -> tuple:
         """Return the list of value names for a given record style"""
         return load_record(style).valuenames
 

@@ -1,10 +1,12 @@
-from typing import Optional, Union, Any, Literal
+from typing import Any, Literal, TYPE_CHECKING
 from copy import deepcopy
 
 from DataModelDict import DataModelDict as DM
 
 from ..query import load_query
-from ..tools import dict_insert
+
+if TYPE_CHECKING:
+    from ..record import Record
 
 __all__ = ['Value']
 
@@ -12,15 +14,15 @@ class Value():
 
     def __init__(self,
                  name: str,
-                 record,
-                 defaultvalue: Optional[Any] = None,
+                 record: Record,
+                 defaultvalue: Any | None = None,
                  valuerequired: bool = False,
-                 allowedvalues: Optional[tuple] = None,
+                 allowedvalues: tuple | None = None,
                  allowcustomvalue: bool = False,
-                 metadatakey: Union[str, Literal[False], None] = None,
-                 metadataparent: Optional[str] = None,
-                 modelpath: Union[str, Literal[False], None] = None,
-                 description: Optional[str] = None):
+                 metadatakey: str | Literal[False] | None = None,
+                 metadataparent: str | None = None,
+                 modelpath: str | Literal[False] | None = None,
+                 description: str | None = None):
         """
         Initialize a Value object.
 
@@ -29,7 +31,7 @@ class Value():
         name : str
             The name of the parameter.  This should correspond to the name of
             the associated class attribute.
-        record : Record, optional
+        record : Record
             The Record object that the Parameter is used with.
         defaultvalue : any or None, optional
             The default value to use for the property.  The default value of
@@ -81,7 +83,7 @@ class Value():
                 raise TypeError('metadatakey can be None, False, or str')
         elif metadatakey is not False:
             metadatakey = str(metadatakey)   
-        self.__metadatakey: Union[str, Literal[False]] = metadatakey
+        self.__metadatakey: str | Literal[False] = metadatakey
 
         self.__metadataparent = metadataparent
 
@@ -91,14 +93,14 @@ class Value():
             raise TypeError('modelpath can be None, False, or str')
         elif modelpath is not False:
             modelpath = str(modelpath)
-        self.__modelpath: Union[str, Literal[False]] = modelpath
+        self.__modelpath: str | Literal[False] = modelpath
 
         self.value = defaultvalue
 
         self.__queries = deepcopy(self._default_queries)
 
     @property
-    def style(self):
+    def style(self) -> str:
         """The Value's style"""
         # Set default based on (grand)parent module's name
         modulepath = self.__module__.split('.')
@@ -115,7 +117,7 @@ class Value():
         return self.__name
 
     @property
-    def record(self):
+    def record(self) -> Record:
         """Record: The record that this parameter is used with"""
         return self.__record
 
@@ -130,12 +132,12 @@ class Value():
         return self.__valuerequired
     
     @property
-    def allowedvalues(self) -> Optional[tuple]:
+    def allowedvalues(self) -> tuple | None:
         """tuple or None: tuple containing all allowed values.  If None, no limits."""
         return self.__allowedvalues
     
     @allowedvalues.setter
-    def allowedvalues(self, val: Optional[tuple]):
+    def allowedvalues(self, val: tuple | None):
         if val is None:
             self.__allowedvalues = None
         else:
@@ -147,17 +149,17 @@ class Value():
         return self.__allowcustomvalue
     
     @property
-    def metadatakey(self) -> Union[str, Literal[False]]:
+    def metadatakey(self) -> str | Literal[False]:
         """str or False: The key to save the property under in the metadata dict"""
         return self.__metadatakey
     
     @property
-    def metadataparent(self) -> Optional[str]:
+    def metadataparent(self) -> str | None:
         """str or None: The parent key in the metadata dict that metadatakey is below"""
         return self.__metadataparent
     
     @property
-    def modelpath(self) -> Union[str, Literal[False]]:
+    def modelpath(self) -> str | Literal[False]:
         """str or False: The period-delimited path after the root element where the parameter is stored in a data model"""
         return self.__modelpath
     
@@ -183,7 +185,7 @@ class Value():
         return self.__value
     
     @value.setter
-    def value(self, val):
+    def value(self, val: Any):
         val = self.set_value_mod(val)
         
         # Require val to be in allowedvalues if allowedvalues exists and a custom value is not allowed
@@ -193,12 +195,12 @@ class Value():
             
         self.__value = val
 
-    def valuedoc(self, indent=0) -> str:
+    def valuedoc(self, indent: int = 0) -> str:
         """Builds the valuedoc information for the value"""
         pre = ' '*indent
         return f'{pre}- __{self.name}__ (*{self.style}*): {self.description}'
 
-    def set_value_mod(self, val):
+    def set_value_mod(self, val: Any) -> Any:
         """Modifies values before setting them"""            
         return val
 
@@ -226,10 +228,10 @@ class Value():
     def add_query(self,
                   style: str,
                   description: str,
-                  name: Optional[str] = None,
-                  metadatakey: Optional[str] = None,
-                  metadataparent: Optional[str] = None,
-                  modelpath: Optional[str] = None):
+                  name: str | None = None,
+                  metadatakey: str | None = None,
+                  metadataparent: str | None = None,
+                  modelpath: str | None = None):
         """
         Builds and adds a new query operation for the parameter using the
         parameter's settings.
@@ -271,7 +273,7 @@ class Value():
                                         description=description)
 
     def build_model(self,
-                    model):
+                    model: DM):
         """
         Inserts the parameter model into the record's model.
         
@@ -279,16 +281,6 @@ class Value():
         ----------
         model : DataModelDict.DataModelDict
             The record content (after root element) to add content to.
-        before : any, optional
-            An element key at the same final level as this parameter's model
-            path that this parameter should be inserted directly before.
-            Cannot be given with after.  If neither before nor after is given
-            then the parameter will be inserted into the dict normally.
-        after : any, optional
-            An element key at the same final level as this parameter's model
-            path that this parameter should be inserted directly after.
-            Cannot be given with before.  If neither before nor after is given
-            then the parameter will be inserted into the dict normally.
         """
         # Do nothing if modelpath is False
         if self.modelpath is False:
@@ -329,7 +321,9 @@ class Value():
         """Function to modify how values are represented in the model"""
         return self.value
     
-    def load_model(self, model, setvalue=True) -> Optional[Any]:
+    def load_model(self,
+                   model: DM,
+                   setvalue: bool = True) -> Any | None:
         """
         Loads the parameter value from the record's model.
         
@@ -359,11 +353,11 @@ class Value():
         else:
             return val
 
-    def load_model_value(self, val):
+    def load_model_value(self, val: Any) -> Any:
         """Function to modify how values are interpreted from the model"""
         return val
 
-    def metadata(self, meta):
+    def metadata(self, meta: dict):
         """
         Adds the parameter to the record's metadata dict.
 
@@ -384,6 +378,6 @@ class Value():
                 meta[self.metadataparent] = {}
             meta[self.metadataparent][self.metadatakey] = self.metadata_value()
 
-    def metadata_value(self):
+    def metadata_value(self) -> Any:
         """Function to modify how values are represented in the metadata"""
         return self.value

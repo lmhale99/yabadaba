@@ -1,7 +1,7 @@
 # Standard Python libraries
 import sys
 from importlib import import_module, resources
-from typing import Optional, Any
+from typing import Any
 
 class ModuleManager():
     """

@@ -1,6 +1,5 @@
 
-# Standard Python libraries
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -60,7 +59,7 @@ class IntQuery(Query):
                 if isinstance(v, tuple) and len(v) == 2:
                     valranges.append(v)
                 else:
-                    val.append(int(v))
+                    val.append(int(v)) # type: ignore
 
             # Init newquery as list of $or evaluations
             newquery = {'$or':[]}
@@ -97,7 +96,7 @@ class IntQuery(Query):
         def apply_function(series: pd.Series,
                            name: str,
                            value: Any,
-                           parent: Optional[str]) -> bool:
+                           parent: str | None) -> bool:
             """
             function for pandas.DataFrame.apply with axis=1
             
@@ -133,7 +132,7 @@ class IntQuery(Query):
                 if isinstance(v, tuple) and len(v) == 2:
                     valranges.append(v)
                 else:
-                    val.append(int(v))
+                    val.append(int(v)) # type: ignore
 
             if parent is None:
 

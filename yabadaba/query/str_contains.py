@@ -1,6 +1,5 @@
 
-# Standard Python libraries
-from typing import Any, Optional
+from typing import Any
 
 # Relative imports
 from ..tools import iaslist
@@ -81,7 +80,7 @@ class StrContainsQuery(Query):
         def apply_function(series: pd.Series,
                            name: str,
                            value: Any,
-                           parent: Optional[str]) -> bool:
+                           parent: str | None) -> bool:
             """
             function for pandas.DataFrame.apply with axis=1
             

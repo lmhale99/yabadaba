@@ -1,5 +1,3 @@
-
-# iprPy imports
 from . import recordmanager, databasemanager, querymanager, valuemanager
 
 __all__ = ['check_modules']

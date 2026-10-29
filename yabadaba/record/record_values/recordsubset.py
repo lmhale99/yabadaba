@@ -1,4 +1,4 @@
-from typing import Optional, Union, Any
+from typing import Any, Literal, TYPE_CHECKING
 from inspect import isclass
 
 from DataModelDict import DataModelDict as DM
@@ -6,7 +6,9 @@ from DataModelDict import DataModelDict as DM
 from .. import recordmanager, Record
 from ...query import load_query
 from ...value import Value
-from ...tools import aslist, iaslist
+
+if TYPE_CHECKING:
+    from ...record import Record
 
 __all__ = ['RecordSubsetValue']
 
@@ -14,17 +16,17 @@ class RecordSubsetValue(Value):
     
     def __init__(self,
                  name: str,
-                 record,
-                 recordclass: Union[str, type[Record]],
-                 defaultvalue: Optional[Any] = None,
+                 record: Record,
+                 recordclass: str | type[Record],
+                 defaultvalue: Any | None = None,
                  valuerequired: bool = False,
-                 allowedvalues: Optional[tuple] = None,
+                 allowedvalues: tuple | None = None,
                  allowcustomvalue: bool = False,
-                 metadatakey: Union[str, bool, None] = None,
-                 metadataparent: Optional[str] = None,
+                 metadatakey: str | Literal[False] | None = None,
+                 metadataparent: str | None = None,
                  metadataprefix: str = '',
-                 modelpath: Optional[str] = None,
-                 description: Optional[str] = None):
+                 modelpath: str | Literal[False] | None = None,
+                 description: str | None = None):
         """
         Initialize a Value that is a record object.  Allows for the reuse of
         common subsets across multiple records.
@@ -113,7 +115,7 @@ class RecordSubsetValue(Value):
         """str: The value style"""
         return 'recordsubset'
     
-    def valuedoc(self, indent=0) -> str:
+    def valuedoc(self, indent: int = 0) -> str:
         """Builds the valuedoc information for the value"""
         pre = ' '*indent
         doc = [f'{pre}- __{self.name}__ (*{self.recordclass().style} record*): {self.description}']
@@ -162,7 +164,7 @@ class RecordSubsetValue(Value):
 
         return self.__default_queries
 
-    def set_value_mod(self, val):
+    def set_value_mod(self, val: Any) -> Any:
         
         # Check that val is of the correct record class
         if isinstance(val, self.recordclass):
@@ -252,16 +254,14 @@ class RecordSubsetValue(Value):
                     m[path[-1]] = model_value
 
             
-
-
-    def build_model_value(self):
+    def build_model_value(self) -> Any:
         
         # Get subset record's model
         model = self.value.build_model()
 
         return model
     
-    def metadata(self, meta):
+    def metadata(self, meta: dict):
         """
         Adds all subset metadata fields to the record's metadata dict.
 
@@ -294,7 +294,7 @@ class RecordSubsetValue(Value):
                     continue
                 meta[self.metadataparent][f'{prefix}{key}'] = value
     
-    def load_model_value(self, val):
+    def load_model_value(self, val: Any) -> Any:
         
         # Load contents into the value object
         model = DM()

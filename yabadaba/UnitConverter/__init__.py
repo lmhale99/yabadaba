@@ -1,7 +1,6 @@
 
 # Standard Python libraries
 import ast
-from typing import Optional, Union
 
 # https://github.com/usnistgov/DataModelDict
 from DataModelDict import DataModelDict as DM
@@ -106,7 +105,7 @@ class UnitConverter():
         ])
 
     def reset_units(self, 
-                    seed: Union[int, str, None] = None,
+                    seed: int | str | None = None,
                     **kwargs):
         """
         Resets the core units from which all others are derived.  Based on the
@@ -296,7 +295,7 @@ class UnitConverter():
 
     def set_in_units(self, 
                      value: unitfloat,
-                     units: Optional[str] = None) -> np.ndarray:
+                     units: str | None = None) -> np.ndarray:
         """
         Convert value from specified units to working units.
         
@@ -332,8 +331,8 @@ class UnitConverter():
         return np.asarray(value) * scale
 
     def get_in_units(self, 
-                     value: Union[float, npt.ArrayLike],
-                     units: Optional[str] = None) -> np.ndarray:
+                     value: float | npt.ArrayLike,
+                     units: str | None = None) -> np.ndarray:
         """
         Convert value from working units to specified units.
         
@@ -410,9 +409,9 @@ class UnitConverter():
         return error
         
     def model(self,
-              value: Union[float, npt.ArrayLike],
-              units: Optional[str] = None,
-              error: Optional[Union[float, npt.ArrayLike]] = None) -> DM:
+              value: float | npt.ArrayLike,
+              units: str | None = None,
+              error: float | npt.ArrayLike | None = None) -> DM:
         """
         Generates DataModelDict representation of data.
         
@@ -467,7 +466,7 @@ class UnitConverter():
         
         return datamodel
 
-    def parse(self, units: Optional[str]) -> float:
+    def parse(self, units: str | None) -> float:
         """
         Convert units as strings (or None) into scaling numbers.  This function
         allows for complex unit definitions with operators:

@@ -1,4 +1,4 @@
-from typing import Optional, Union, Any, Literal
+from typing import Any, Literal, TYPE_CHECKING
 from inspect import isclass
 
 from DataModelDict import DataModelDict as DM
@@ -8,7 +8,10 @@ import pandas as pd
 from .. import recordmanager, Record
 from ...query import load_query
 from ...value import Value
-from ...tools import aslist, iaslist
+from ...tools import aslist
+
+if TYPE_CHECKING:
+    from ...record import Record
 
 __all__ = ['RecordListValue']
 
@@ -16,16 +19,16 @@ class RecordListValue(Value):
 
     def __init__(self,
                  name: str,
-                 record,
-                 recordclass: Union[str, type[Record]],
-                 defaultvalue: Optional[Any] = None,
+                 record: Record,
+                 recordclass: str | type[Record],
+                 defaultvalue: Any | None = None,
                  valuerequired: bool = False,
-                 allowedvalues: Optional[tuple] = None,
+                 allowedvalues: tuple | None = None,
                  allowcustomvalue: bool = False,
-                 metadatakey: Union[str, Literal[False], None] = None,
-                 metadataparent: Optional[str] = None,
-                 modelpath: Union[str, Literal[False], None] = None,
-                 description: Optional[str] = None):
+                 metadatakey: str | Literal[False] | None = None,
+                 metadataparent: str | None = None,
+                 modelpath: str | Literal[False] | None = None,
+                 description: str | None = None):
         """
         Initialize a Value that is a list of Record objects of the same style.
 
@@ -90,7 +93,7 @@ class RecordListValue(Value):
         """str: The value style"""
         return 'recordlist'
     
-    def valuedoc(self, indent=0) -> str:
+    def valuedoc(self, indent: int = 0) -> str:
         """Builds the valuedoc information for the value"""
         pre = ' '*indent
         doc = [f'{pre}- __{self.name}__ (*list of {self.emptyrecord.style} records*): {self.description}']
@@ -132,7 +135,7 @@ class RecordListValue(Value):
 
         return self.__default_queries
 
-    def set_value_mod(self, val):
+    def set_value_mod(self, val: Any) -> Any:
         
         # Set as empty list if None
         if val is None:
@@ -176,7 +179,7 @@ class RecordListValue(Value):
         val = self.recordclass(**kwargs)
         self.value.append(val)
 
-    def build_model_value(self):
+    def build_model_value(self) -> Any:
         if self.valuerequired and len(self.value) == 0:
             raise ValueError(f'no {self.name} values have been set!')
 
@@ -190,7 +193,7 @@ class RecordListValue(Value):
             return models[0]
         return models
     
-    def metadata_value(self):
+    def metadata_value(self) -> Any:
         """Function to modify how values are represented in the metadata"""
         if self.valuerequired and len(self.value) == 0:
             raise ValueError(f'no {self.name} values have been set!')
@@ -200,7 +203,7 @@ class RecordListValue(Value):
             metadatas.append(val.metadata())
         return metadatas
     
-    def load_model_value(self, val):
+    def load_model_value(self, val: Any) -> Any:
         if isinstance(val, dict):
             val = [val]
         
