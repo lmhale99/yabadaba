@@ -1,7 +1,8 @@
 # Standard Python libraries
 import sys
-from importlib import import_module
-from typing import Optional
+from importlib import import_module, resources
+from typing import Optional, Any
+
 class ModuleManager():
     """
     Base class for managing module subclasses
@@ -21,10 +22,11 @@ class ModuleManager():
         self.__loaded_styles = {}
         self.__failed_styles = {}
 
-    def import_style(self, style: str,
+    def import_style(self,
+                     style: str,
                      modulename: str,
-                     package: Optional[str] = None,
-                     classname: Optional[str] = None):
+                     package: str | None = None,
+                     classname: str | None = None):
         """
         Tries to import a modular class and appends the results to loaded_styles or
         failed_styles accordingly.
@@ -40,18 +42,76 @@ class ModuleManager():
             relative package names.
         classname : str, optional
             The name of the class in the imported module to associate with
-            the style.  If not given, will use the final name of the modulename
-            path.
-        """
-        if classname is None:
-            classname = modulename.split('.')[-1]
-        
+            the style.  If not given, will use either the first value in the
+            module's __all__ if it exists, or the final name of the modulename
+            path if it does not.
+        """ 
         try:
-            obj = getattr(import_module(modulename, package=package), classname)
+            # Load module
+            module = import_module(modulename, package=package)
+
+            if classname is None:
+                if hasattr(module, '__all__') and len(module.__all__) > 0:
+                    # Get class name from __all__
+                    classname = str(module.__all__[0])
+                else:
+                    # Get class name from module name
+                    classname = modulename.split('.')[-1]
+            
+            # Load object
+            obj = getattr(module, classname)
+        
         except Exception as e:
             self.failed_styles[style] = '%s: %s' % sys.exc_info()[:2]
         else:
             self.loaded_styles[style] = obj
+
+    def dynamic_import(self,
+                       package: str,
+                       ignorelist: list | None = None,
+                       styleprefix: str = ''):
+        """
+        Automatically finds all submodules of a given package and calls
+        import_style() on the submodule and the primary class within it.
+        The style name is taken as the submodule's name.  The primary class
+        should be indicated by defining the __all__ list in the submodule and
+        making the first term the class's name.
+
+        Parameters
+        ----------
+        package : str
+            The root package where the submodules to import are located.
+        ignorelist : list or None, optional
+            A list of content (without file extensions) inside the module that
+            should be ignored.  Default value of None will ignore only
+            __pycache__ and __init__.
+        styleprefix : str, optional
+            An optional prefix to add to the style name. 
+        """
+        if ignorelist is None:
+            ignorelist = ['__pycache__', '__init__']
+        
+        for resource in resources.files(package).iterdir():
+            # Check that resource is a folder, .py file or .pyc file
+            if resource.is_dir():
+                modulename = resource.name
+            elif resource.is_file():
+                if resource.name.endswith('.py'):
+                    modulename = resource.name[:-3]
+                elif resource.name.endswith('.pyc'):
+                    modulename = resource.name[:-4]
+                else:
+                    continue
+            
+            # Skip anything in the ignore_list
+            if modulename in ignorelist:
+                continue
+
+            # Add style prefix
+            style = f'{styleprefix}{modulename}'
+
+            # Attempt to import the submodule
+            self.import_style(style, f'.{modulename}', package)
 
     @property
     def parentname(self) -> str:
@@ -115,7 +175,7 @@ class ModuleManager():
             raise KeyError(f'Unknown {self.parentname} style {style}')
 
     def get_class(self,
-                  style: str):
+                  style: str) -> type[Any]:
         """
         Retrieves the class of the given style.
 
