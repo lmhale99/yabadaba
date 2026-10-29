@@ -1,10 +1,12 @@
-from typing import Optional, Union, Any
+from typing import Optional, Union, Any, Literal
 from copy import deepcopy
 
 from DataModelDict import DataModelDict as DM
 
 from ..query import load_query
 from ..tools import dict_insert
+
+__all__ = ['Value']
 
 class Value():
 
@@ -15,9 +17,9 @@ class Value():
                  valuerequired: bool = False,
                  allowedvalues: Optional[tuple] = None,
                  allowcustomvalue: bool = False,
-                 metadatakey: Union[str, bool, None] = None,
+                 metadatakey: Union[str, Literal[False], None] = None,
                  metadataparent: Optional[str] = None,
-                 modelpath: Optional[str] = None,
+                 modelpath: Union[str, Literal[False], None] = None,
                  description: Optional[str] = None):
         """
         Initialize a Value object.
@@ -75,27 +77,37 @@ class Value():
 
         if metadatakey is None:
             metadatakey = self.name
-        elif isinstance(metadatakey, bool):
-            if metadatakey is True:
+        elif metadatakey is True:
                 raise TypeError('metadatakey can be None, False, or str')
-        else:
+        elif metadatakey is not False:
             metadatakey = str(metadatakey)   
-        self.__metadatakey = metadatakey
+        self.__metadatakey: Union[str, Literal[False]] = metadatakey
 
         self.__metadataparent = metadataparent
 
         if modelpath is None:
-            modelpath = name
-        self.__modelpath = str(modelpath)
+            modelpath = self.name
+        elif modelpath is True:
+            raise TypeError('modelpath can be None, False, or str')
+        elif modelpath is not False:
+            modelpath = str(modelpath)
+        self.__modelpath: Union[str, Literal[False]] = modelpath
 
         self.value = defaultvalue
 
         self.__queries = deepcopy(self._default_queries)
 
     @property
-    def style(self) -> str:
-        """str: The value style"""
-        return 'base'
+    def style(self):
+        """The Value's style"""
+        # Set default based on (grand)parent module's name
+        modulepath = self.__module__.split('.')
+        if self.__class__.__name__ != modulepath[-1]:
+            # Return parent if different than class name
+            return modulepath[-1]
+        else:
+            # Return grand parent if parent is class name
+            return modulepath[-2]
 
     @property
     def name(self) -> str:
@@ -135,8 +147,8 @@ class Value():
         return self.__allowcustomvalue
     
     @property
-    def metadatakey(self) -> Union[str, bool]:
-        """str or bool: The key to save the property under in the metadata dict"""
+    def metadatakey(self) -> Union[str, Literal[False]]:
+        """str or False: The key to save the property under in the metadata dict"""
         return self.__metadatakey
     
     @property
@@ -145,8 +157,8 @@ class Value():
         return self.__metadataparent
     
     @property
-    def modelpath(self) -> str:
-        """str: The period-delimited path after the root element where the parameter is stored in a data model"""
+    def modelpath(self) -> Union[str, Literal[False]]:
+        """str or False: The period-delimited path after the root element where the parameter is stored in a data model"""
         return self.__modelpath
     
     @property
@@ -248,10 +260,10 @@ class Value():
         if name is None:
             name = self.name
         if metadatakey is None and self.metadatakey is not False:
-            metadatakey = self.metadatakey
+            metadatakey = str(self.metadatakey)
             metadataparent = self.metadataparent
-        if modelpath is None:
-            modelpath = self.modelpath
+        if modelpath is None and self.modelpath is not False:
+            modelpath = str(self.modelpath)
         
         self.queries[name] = load_query(style, name=metadatakey,
                                         parent=metadataparent,
@@ -259,8 +271,7 @@ class Value():
                                         description=description)
 
     def build_model(self,
-                    model,
-                    **kwargs):
+                    model):
         """
         Inserts the parameter model into the record's model.
         
@@ -279,31 +290,39 @@ class Value():
             Cannot be given with before.  If neither before nor after is given
             then the parameter will be inserted into the dict normally.
         """
+        # Do nothing if modelpath is False
+        if self.modelpath is False:
+            return
+        
         # Build value to output
-        value = self.build_model_value()
+        model_value = self.build_model_value()
         
         # Do nothing if value not required and empty
-        if value is None and self.valuerequired is False:
+        if model_value is None and self.valuerequired is False:
             return
 
-        # Split path
-        path = self.modelpath.split('.')
-        
-        # Iterate down path and create parent elements if needed
-        m = model
-        for key in path[:-1]:
-            if key not in m:
-                m[key] = DM()
-            m = m[key]
-        
-        # Check if target path exists and is a dict
-        if path[-1] in m and isinstance(m[path[-1]], dict):
-            # Insert the value as #text
-            dict_insert(m[path[-1]], '#text', value, **kwargs)
-
+        if self.modelpath.startswith('..'):
+            model[self.modelpath] = model_value
         else:
-            # Insert the parameter's value into the model
-            dict_insert(m, path[-1], value, **kwargs)
+
+            # Split path
+            path = self.modelpath.split('.')
+            
+            # Iterate down path and create parent elements if needed
+            m = model
+            for key in path[:-1]:
+                if key not in m:
+                    m[key] = DM()
+                m = m[key]
+            
+            # Check if target path exists and is a dict
+            if path[-1] in m and isinstance(m[path[-1]], dict):
+                # Insert the value as #text
+                m[path[-1]]['#text'] = model_value
+
+            else:
+                # Insert the parameter's value into the model
+                m[path[-1]] = model_value
 
 
     def build_model_value(self):
@@ -324,6 +343,10 @@ class Value():
             value at modelpath will be returned instead for further
             manipulations.
         """
+        # Do nothing if modelpath is False
+        if self.modelpath is False:
+            return
+        
         path = self.modelpath.split('.')
 
         try:

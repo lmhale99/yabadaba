@@ -1,18 +1,15 @@
-from typing import Optional, Union, Any
+from typing import Optional, Union, Any, Literal
 
-from DataModelDict import DataModelDict as DM
+import numpy as np
+import numpy.typing as npt
 
-from ..query import load_query
 from . import Value
 from .. import unitconvert as uc
 
-class FloatValue(Value):
-    
-    @property
-    def style(self) -> str:
-        """str: The value style"""
-        return 'float'
-    
+__all__ = ['IntArrayValue']
+
+class IntArrayValue(Value):
+        
     def __init__(self,
                  name: str,
                  record,
@@ -20,13 +17,13 @@ class FloatValue(Value):
                  valuerequired: bool = False,
                  allowedvalues: Optional[tuple] = None,
                  allowcustomvalue: bool = False,
-                 metadatakey: Union[str, bool, None] = None,
+                 metadatakey: Union[str, Literal[False], None] = None,
                  metadataparent: Optional[str] = None,
-                 modelpath: Optional[str] = None,
+                 modelpath: Union[str, Literal[False], None] = None,
                  description: Optional[str] = None,
-                 unit: Optional[str] = None):
+                 shape: Optional[tuple] = None):
         """
-        Initialize a FloatValue object.
+        Initialize an FloatArrayValue object for managing arrays of floats.
 
         Parameters
         ----------
@@ -65,87 +62,52 @@ class FloatValue(Value):
         description: str or None, optional
             A short description for the value.  If not given, then the record name
             will be used.
-        unit: str, optional
-            The units to use when saving the value in a database.  A value of None
-            (default) indicates that no unit conversions should be done.
+        shape : tuple, optional
+            The dimensions the array must have.  A value of None (default) will
+            allow the array to be any shape.
         """
-        self.__unit = unit
+        if isinstance(shape, int):
+            shape = (shape, )
+        elif shape is not None:
+            shape = tuple([int(i) for i in shape])
+        self.__shape = shape
+
+        # Require metadatakey to be explicitly given
+        if metadatakey is None:
+            metadatakey = False
         
+        # Check that allowedvalues is not given
+        if allowedvalues is not None:
+            raise ValueError('allowedvalues not allowed for arrays')
+
         super().__init__(name, record, defaultvalue=defaultvalue,
                          valuerequired=valuerequired, allowedvalues=allowedvalues,
                          allowcustomvalue=allowcustomvalue,
                          metadatakey=metadatakey, metadataparent=metadataparent,
                          modelpath=modelpath, description=description)
-        
+
     @property
-    def unit(self) -> Optional[str]:
-        """str or None: The units to use when saving the value to the model."""
-        return self.__unit
+    def shape(self) -> Optional[tuple]:
+        """tuple or None: The required shape of the array."""
+        return self.__shape
 
     def set_value_mod(self, val):
-
-        # Check if value is in #text
-        val = self.set_value_mod_textfield(val)
-
         if val is None:
             return None
-        elif self.unit is not None:
-            return uc.set_in_units(val)
-        else:
-            return float(val)
-    
-    @property
-    def _default_queries(self) -> dict:
-        """dict: Default query operations to associate with the Parameter style"""
-        if self.metadatakey is False:
-            return {}
-        else:
-            return {
-                self.name: load_query('float',
-                                    name=self.metadatakey,
-                                    parent=self.metadataparent,
-                                    path=f'{self.record.modelroot}.{self.modelpath}',
-                                    unit=self.unit,
-                                    description=f'Return only the records where {self.description} matches a given value or is in a given range')
-            }
+        
+        elif isinstance(val, str):
+            val = val.strip().split()
+
+        val = np.asarray(val, dtype=int)
+
+        if self.shape is not None and val.shape != self.shape:
+            raise ValueError(f'{self.name} must have shape {self.shape}')
+        
+        return val
     
     def build_model_value(self):
-        if self.value is None:
-            return None
-        
-        if self.unit is None:
-            return self.value
-        else:
-            return uc.model(self.value, self.unit)
+        return self.value.tolist()
         
     def load_model_value(self, val):
-        if isinstance(val, float) or self.unit is None:
-            return val
-        else:
-            return uc.value_unit(val)
-        
-    def metadata(self, meta):
-        """
-        Adds the parameter to the record's metadata dict.
-
-        Parameters
-        ----------
-        meta : dict
-            The metadata dict being built for the record.
-        """
-        if self.metadatakey is False or self.value is None:
-            return
-        
-        # Convert value to unit 
-        value = self.value
-        if self.unit is not None:
-            value = uc.get_in_units(value, self.unit)
-        
-        if self.metadataparent is None:
-            meta[self.metadatakey] = value
-
-        else:
-            if self.metadataparent not in meta:
-                meta[self.metadataparent] = {}
-            meta[self.metadataparent][self.metadatakey] = value
+        return np.asarray(val, dtype=int)
         

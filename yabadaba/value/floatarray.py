@@ -1,4 +1,4 @@
-from typing import Optional, Union, Any
+from typing import Optional, Union, Any, Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -6,12 +6,9 @@ import numpy.typing as npt
 from . import Value
 from .. import unitconvert as uc
 
+__all__ = ['FloatArrayValue']
+
 class FloatArrayValue(Value):
-    
-    @property
-    def style(self) -> str:
-        """str: The value style"""
-        return 'floatarray'
     
     def __init__(self,
                  name: str,
@@ -20,9 +17,9 @@ class FloatArrayValue(Value):
                  valuerequired: bool = False,
                  allowedvalues: Optional[tuple] = None,
                  allowcustomvalue: bool = False,
-                 metadatakey: Union[str, bool, None] = False,
+                 metadatakey: Union[str, Literal[False], None] = None,
                  metadataparent: Optional[str] = None,
-                 modelpath: Optional[str] = None,
+                 modelpath: Union[str, Literal[False], None] = None,
                  description: Optional[str] = None,
                  unit: Optional[str] = None,
                  shape: Optional[tuple] = None):

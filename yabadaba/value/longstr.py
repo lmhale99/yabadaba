@@ -2,35 +2,23 @@ from typing import Optional, Union, Any
 
 from DataModelDict import DataModelDict as DM
 
-import numpy as np
-
 from ..query import load_query
 from . import Value
 
-class IntValue(Value):
-    
-    @property
-    def style(self) -> str:
-        """str: The value style"""
-        return 'int'
+__all__ = ['LongStrValue']
+
+class LongStrValue(Value):
     
     def set_value_mod(self, val):
 
         # Check if value is in #text
         val = self.set_value_mod_textfield(val)
 
+        # Pass None values through
         if val is None:
             return None
-        elif isinstance(val, float):
-            rval = round(val)
-            if not np.isclose(rval, val):
-                raise TypeError(f'{self.name} not an int!')
-            return rval
-        else:
-            try:
-                return int(val)
-            except Exception as e:
-                raise ValueError(f'{self.name} not an int!') from e
+            
+        return str(val)
     
     @property
     def _default_queries(self) -> dict:
@@ -39,9 +27,9 @@ class IntValue(Value):
             return {}
         else:
             return {
-                self.name: load_query('int',
+                self.name: load_query('str_contains',
                                     name=self.metadatakey,
                                     parent=self.metadataparent,
                                     path=f'{self.record.modelroot}.{self.modelpath}',
-                                    description=f'Return only the records where {self.description} matches a given value or is in a given range')
+                                    description=f'Return only the records where {self.description} contains the given values')
             }

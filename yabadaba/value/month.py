@@ -7,13 +7,10 @@ import numpy as np
 from ..query import load_query
 from . import Value
 
+__all__ = ['MonthValue']
+
 class MonthValue(Value):
     """Variation of IntValue focused purely on months.  Note model uses xsd:gMonth format"""
-    
-    @property
-    def style(self) -> str:
-        """str: The value style"""
-        return 'month'
     
     @staticmethod
     def str_to_number(val: str):
@@ -42,7 +39,7 @@ class MonthValue(Value):
             return int(val)
         
     @property
-    def fullname(self) -> str:
+    def fullname(self) -> Optional[str]:
         """str: The full month name"""
         if self.value is None:
             return None
@@ -54,7 +51,7 @@ class MonthValue(Value):
         return converter[self.value]
     
     @property
-    def shortname(self) -> str:
+    def shortname(self) -> Optional[str]:
         """str: The 3 letter short name for the month"""
         if self.value is None:
             return None
@@ -66,7 +63,7 @@ class MonthValue(Value):
         return converter[self.value]
     
     @property
-    def xsd_gmonth(self) -> str:
+    def xsd_gmonth(self) -> Optional[str]:
         """str: the xsd:gMonth format of the month"""
         if self.value is None:
             return None

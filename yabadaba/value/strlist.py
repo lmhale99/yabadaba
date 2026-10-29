@@ -4,24 +4,17 @@ from DataModelDict import DataModelDict as DM
 
 from ..query import load_query
 from . import Value
+from ..tools import iaslist
 
-class LongStrValue(Value):
-    
-    @property
-    def style(self) -> str:
-        """str: The value style"""
-        return 'longstr'
+__all__ = ['StrListValue']
+
+class StrListValue(Value):
     
     def set_value_mod(self, val):
-
-        # Check if value is in #text
-        val = self.set_value_mod_textfield(val)
-
-        # Pass None values through
         if val is None:
             return None
-            
-        return str(val)
+        else:
+            return [str(v) for v in iaslist(val)]
     
     @property
     def _default_queries(self) -> dict:
@@ -30,9 +23,16 @@ class LongStrValue(Value):
             return {}
         else:
             return {
-                self.name: load_query('str_contains',
+                self.name: load_query('list_contains',
                                     name=self.metadatakey,
                                     parent=self.metadataparent,
                                     path=f'{self.record.modelroot}.{self.modelpath}',
-                                    description=f'Return only the records where {self.description} contains the given values')
+                                    description=f'Return only the records where {self.description} contains a given value')
             }
+    
+    def build_model_value(self):
+        if self.value is None or len(self.value) == 0:
+            return
+        elif len(self.value) == 1:
+            return self.value[0]
+        return self.value

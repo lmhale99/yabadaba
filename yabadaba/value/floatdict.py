@@ -1,4 +1,4 @@
-from typing import Optional, Union, Any
+from typing import Optional, Union, Any, Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -6,12 +6,9 @@ import numpy.typing as npt
 from . import Value
 from .. import unitconvert as uc
 
-class IntArrayValue(Value):
-    
-    @property
-    def style(self) -> str:
-        """str: The value style"""
-        return 'intarray'
+__all__ = ['FloatDictValue']
+
+class FloatDictValue(Value):
     
     def __init__(self,
                  name: str,
@@ -20,13 +17,14 @@ class IntArrayValue(Value):
                  valuerequired: bool = False,
                  allowedvalues: Optional[tuple] = None,
                  allowcustomvalue: bool = False,
-                 metadatakey: Union[str, bool, None] = False,
+                 metadatakey: Union[str, Literal[False], None] = None,
                  metadataparent: Optional[str] = None,
-                 modelpath: Optional[str] = None,
+                 modelpath: Union[str, Literal[False], None] = None,
                  description: Optional[str] = None,
-                 shape: Optional[tuple] = None):
+                 unit: Optional[str] = None):
         """
-        Initialize an FloatArrayValue object for managing arrays of floats.
+        Initialize an FloatDictValue object for managing a dict with similar
+        float values.
 
         Parameters
         ----------
@@ -65,15 +63,11 @@ class IntArrayValue(Value):
         description: str or None, optional
             A short description for the value.  If not given, then the record name
             will be used.
-        shape : tuple, optional
-            The dimensions the array must have.  A value of None (default) will
-            allow the array to be any shape.
+        unit: str, optional
+            The units to use when saving the value in a database.  A value of None
+            (default) indicates that no unit conversions should be done.
         """
-        if isinstance(shape, int):
-            shape = (shape, )
-        elif shape is not None:
-            shape = tuple([int(i) for i in shape])
-        self.__shape = shape
+        self.__unit = unit
 
         # Require metadatakey to be explicitly given
         if metadatakey is None:
@@ -88,29 +82,51 @@ class IntArrayValue(Value):
                          allowcustomvalue=allowcustomvalue,
                          metadatakey=metadatakey, metadataparent=metadataparent,
                          modelpath=modelpath, description=description)
-
-    @property
-    def shape(self) -> Optional[tuple]:
-        """tuple or None: The required shape of the array."""
-        return self.__shape
-
-    def set_value_mod(self, val):
-        if val is None:
-            return None
         
-        elif isinstance(val, str):
-            val = val.strip().split()
+    @property
+    def unit(self) -> Optional[str]:
+        """str or None: The units to use when saving the value to the model."""
+        return self.__unit
 
-        val = np.asarray(val, dtype=int)
-
-        if self.shape is not None and val.shape != self.shape:
-            raise ValueError(f'{self.name} must have shape {self.shape}')
+    def set_value_mod(self, val):        
+        if val is None:
+            return {}
+        elif isinstance(val, dict):
+            val = uc.set_literal(val)
+        else:
+            val = np.asarray(val, dtype=float)
         
         return val
     
     def build_model_value(self):
-        return self.value.tolist()
+        if self.value is None:
+            return None
+        return uc.model(self.value, self.unit)
         
     def load_model_value(self, val):
-        return np.asarray(val, dtype=int)
+        return uc.value_unit(val)
         
+    def metadata(self, meta):
+        """
+        Adds the parameter to the record's metadata dict.
+
+        Parameters
+        ----------
+        meta : dict
+            The metadata dict being built for the record.
+        """
+        if self.metadatakey is False or self.value is None:
+            return
+        
+        # Convert value to unit 
+        value = self.value
+        if self.unit is not None:
+            value = uc.get_in_units(value, self.unit)
+
+        if self.metadataparent is None:
+            meta[self.metadatakey] = value
+
+        else:
+            if self.metadataparent not in meta:
+                meta[self.metadataparent] = {}
+            meta[self.metadataparent][self.metadatakey] = value
