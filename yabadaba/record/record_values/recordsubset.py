@@ -3,10 +3,12 @@ from inspect import isclass
 
 from DataModelDict import DataModelDict as DM
 
-from . import recordmanager, Record
-from ..query import load_query
-from ..value import Value
-from ..tools import aslist, iaslist
+from .. import recordmanager, Record
+from ...query import load_query
+from ...value import Value
+from ...tools import aslist, iaslist
+
+__all__ = ['RecordSubsetValue']
 
 class RecordSubsetValue(Value):
     
@@ -170,10 +172,92 @@ class RecordSubsetValue(Value):
         else:
             raise TypeError(f'value must be a {self.recordclass} object')
 
+    def build_model(self,
+                    model: DM):
+        """
+        Inserts the parameter model into the record's model.
+        
+        Parameters
+        ----------
+        model : DataModelDict.DataModelDict
+            The record content (after root element) to add content to.
+        """
+        # Do nothing if modelpath is False
+        if self.modelpath is False:
+            return
+        
+        # Build the model of the value to output
+        model_value = self.build_model_value()
+
+        # split model value into core and .. paths
+        core_model_value = model_value.pop(self.value.modelroot)
+        
+        # Do nothing if value is not required and is empty
+        if len(core_model_value) == 0 and self.valuerequired is False:
+            pass
+        
+        elif self.modelpath.startswith('..'):
+            model[self.modelpath] = model_value
+
+        else:
+
+            # Split path to the main content
+            path = self.modelpath.split('.')
+            
+            # Iterate down path and create parent elements if needed
+            m = model
+            for key in path:
+                if key not in m:
+                    m[key] = DM()
+                m = m[key]
+
+            for model_key in core_model_value:
+                # Check if target path exists and is a dict
+                if model_key in m and isinstance(m[model_key], dict):
+                    # Insert the value as #text
+                    m[model_key]['#text'] = core_model_value[model_key]
+
+                else:
+                    # Insert the parameter's value into the model
+                    m[model_key] = core_model_value[model_key]
+
+        # Reorder core keys
+        if self.value.modelsortkeys is not None:
+            m.reorder(self.value.modelsortkeys)
+
+        # Iterate through non-core .. paths
+        for uppath in model_value:
+
+            if uppath.startswith('..'):
+                model[uppath] = model_value
+            else:
+    
+                # Split path
+                path = uppath.split('.')
+                
+                # Iterate down path and create parent elements if needed
+                m = model
+                for key in path[:-1]:
+                    if key not in m:
+                        m[key] = DM()
+                    m = m[key]
+                
+                # Check if target path exists and is a dict
+                if path[-1] in m and isinstance(m[path[-1]], dict):
+                    # Insert the value as #text
+                    m[path[-1]]['#text'] = model_value
+    
+                else:
+                    # Insert the parameter's value into the model
+                    m[path[-1]] = model_value
+
+            
+
+
     def build_model_value(self):
         
-        # Get subset's model without root element
-        model = self.value.build_model()[self.value.modelroot]
+        # Get subset record's model
+        model = self.value.build_model()
 
         return model
     

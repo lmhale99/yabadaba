@@ -1,14 +1,16 @@
-from typing import Optional, Union, Any
+from typing import Optional, Union, Any, Literal
 from inspect import isclass
 
 from DataModelDict import DataModelDict as DM
 
 import pandas as pd
 
-from . import recordmanager, Record
-from ..query import load_query
-from ..value import Value
-from ..tools import aslist, iaslist
+from .. import recordmanager, Record
+from ...query import load_query
+from ...value import Value
+from ...tools import aslist, iaslist
+
+__all__ = ['RecordListValue']
 
 class RecordListValue(Value):
 
@@ -20,9 +22,9 @@ class RecordListValue(Value):
                  valuerequired: bool = False,
                  allowedvalues: Optional[tuple] = None,
                  allowcustomvalue: bool = False,
-                 metadatakey: Union[str, bool, None] = None,
+                 metadatakey: Union[str, Literal[False], None] = None,
                  metadataparent: Optional[str] = None,
-                 modelpath: Optional[str] = None,
+                 modelpath: Union[str, Literal[False], None] = None,
                  description: Optional[str] = None):
         """
         Initialize a Value that is a list of Record objects of the same style.

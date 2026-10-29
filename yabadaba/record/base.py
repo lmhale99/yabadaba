@@ -3,7 +3,7 @@ import types
 import functools
 from pathlib import Path
 from importlib import resources
-from typing import Union, Optional, Any
+from typing import Union, Optional, Any, Type, Literal
 import io
 from tarfile import TarFile
 
@@ -18,6 +18,9 @@ import pandas as pd
 from DataModelDict import DataModelDict as DM
 
 from .. import load_query, load_value
+from ..value import Value
+
+__all__ = ['Record']
 
 class Record():
     """
@@ -31,7 +34,7 @@ class Record():
                  database = None,
                  noname: bool = False,
                  extensible: Optional[bool] = None,
-                 **kwargs: any):
+                 **kwargs):
         """
         Initializes a Record object for a given style.
         
@@ -92,15 +95,15 @@ class Record():
         pass
 
     def _add_value(self,
-                   style: str,
+                   style: Union[str, Type[Value]],
                    name: str,
                    defaultvalue: Optional[Any] = None,
                    valuerequired: bool = False,
                    allowedvalues: Optional[tuple] = None,
                    allowcustomvalue: bool = False,
-                   metadatakey: Union[str, bool, None] = None,
+                   metadatakey: Union[str, Literal[False], None] = None,
                    metadataparent: Optional[str] = None,
-                   modelpath: Optional[str] = None,
+                   modelpath: Union[str, Literal[False], None] = None,
                    description: Optional[str] = None,
                    **kwargs):
         """
@@ -149,16 +152,31 @@ class Record():
         """
         if not self.__can_add_values:
             raise ValueError('Values can only be added when _init_method() is called by __init__()!')
-        self.__value_dict[name] = load_value(style=style, name=name, record=self,
-                                             defaultvalue=defaultvalue,
-                                             valuerequired=valuerequired,
-                                             allowedvalues=allowedvalues,
-                                             allowcustomvalue=allowcustomvalue,
-                                             metadatakey=metadatakey,
-                                             metadataparent=metadataparent,
-                                             modelpath=modelpath,
-                                             description=description,
-                                             **kwargs)
+        
+        if isinstance(style, str):
+            self.__value_dict[name] = load_value(style=style, name=name, record=self,
+                                                defaultvalue=defaultvalue,
+                                                valuerequired=valuerequired,
+                                                allowedvalues=allowedvalues,
+                                                allowcustomvalue=allowcustomvalue,
+                                                metadatakey=metadatakey,
+                                                metadataparent=metadataparent,
+                                                modelpath=modelpath,
+                                                description=description,
+                                                **kwargs)
+        elif issubclass(style, Value):
+            self.__value_dict[name] = style(name=name, record=self,
+                                            defaultvalue=defaultvalue,
+                                            valuerequired=valuerequired,
+                                            allowedvalues=allowedvalues,
+                                            allowcustomvalue=allowcustomvalue,
+                                            metadatakey=metadatakey,
+                                            metadataparent=metadataparent,
+                                            modelpath=modelpath,
+                                            description=description,
+                                            **kwargs)
+        else:
+            raise TypeError('style must be Value style or Value class')
 
     def __getattribute__(self, name):
         """Adjusted to get value attributes from Value objects"""        
@@ -202,7 +220,7 @@ class Record():
 
     def __dir__(self):
         # Get default attributes
-        return sorted(set(super().__dir__() + list(self.valuenames)))
+        return sorted(set(list(super().__dir__()) + list(self.valuenames)))
 
     def load_model(self,
                    model: Union[str, io.IOBase, DM],
@@ -220,11 +238,12 @@ class Record():
         """
         # Get name if model is a filename
         if name is None:
-            try:
-                if Path(model).is_file():
-                    self.name = Path(model).stem
-            except (ValueError, OSError, TypeError):
-                pass
+            if isinstance(model, (str, Path)):
+                try:
+                    if Path(model).is_file():
+                        self.name = Path(model).stem
+                except (ValueError, OSError, TypeError):
+                    pass
         else:
             self.name = name
 
@@ -289,9 +308,16 @@ class Record():
         return f'{self.style} record named {self.name}'
 
     @property
-    def style(self) -> str:
-        """str: The record style"""
-        return 'base'
+    def style(self):
+        """The Record's style"""
+        # Set default based on (grand)parent module's name
+        modulepath = self.__module__.split('.')
+        if self.__class__.__name__ != modulepath[-1]:
+            # Return parent if different than class name
+            return modulepath[-1]
+        else:
+            # Return grand parent if parent is class name
+            return modulepath[-2]
 
     @property
     def xsd_filename(self) -> tuple:
@@ -314,7 +340,7 @@ class Record():
         return resources.read_binary(*self.xsl_filename)
 
     @property
-    def name(self) -> str:
+    def name(self) -> Optional[str]:
         """str: The record's name."""
         if self.__name is not None or self.noname:
             return self.__name
@@ -384,6 +410,13 @@ class Record():
         raise NotImplementedError('Specific to subclasses')
 
     @property
+    def modelsortkeys(self) -> Optional[list]:
+        """list or None: Explicit order of subelement keys to use. If
+        None, then subelement order is determined by value definitions."""
+        # Default - no key resorting
+        return None
+
+    @property
     def model(self) -> DM:
         """DataModelDict: The record's model content."""
         if self.__model is not None:
@@ -398,7 +431,7 @@ class Record():
         """
         self.load_model(model=self.model, name=self.name)
 
-    def _set_model(self, model: DM):
+    def _set_model(self, model: Union[DM, io.IOBase, str]):
         """
         Sets model content - called by build_model() and load_model() to update
         content.  Use load_model() if you are passing in an external model.
@@ -416,17 +449,40 @@ class Record():
         """
         Generates and returns model content based on the values set to object.
         """
+        # Create model and specify the root
         self.__model = DM()
         self.__model[self.modelroot] = rec = DM()
 
+        # Build model content for known values
         for value_object in self.value_objects:
             value_object.build_model(rec)
 
+        # Search for .. model paths
+        uppaths = []
+        for key in rec:
+            if key.startswith('..'):
+                if self.noname is False:
+                    raise ValueError("path goes outside record's root")
+                uppaths.append(key)
+
+        # Move .. paths to be at the root level and change their prefix
+        for uppath in uppaths:
+            # Pass higher uppaths up to the parent
+            if uppath.startswith('...'):
+                self.__model[uppath[1:]] = rec.pop(uppath)
+            else:
+                self.__model[uppath[2:]] = rec.pop(uppath)
+
+        # Build model content for extensible values
         if self.extensible:    
             for key in self.__dict__.keys():
                 if key.startswith('_Record') or key in self.__recordlist_methods:
                     continue
                 rec[key] = self.__dict__[key]
+
+        # Reorder keys
+        if self.modelsortkeys is not None:
+            rec.reorder(self.modelsortkeys)
 
         return self.__model
 
@@ -497,7 +553,7 @@ class Record():
     def pandasfilter(self,
                      dataframe: pd.DataFrame,
                      name: Union[str, list, None] = None,
-                     **kwargs: any) -> pd.Series:
+                     **kwargs) -> pd.Series:
         """
         Filters a pandas.DataFrame based on kwargs values for the record style.
         
@@ -532,7 +588,7 @@ class Record():
 
     def mongoquery(self,
                    name: Union[str, list, None] = None,
-                   **kwargs: any) -> dict:
+                   **kwargs) -> dict:
         """
         Builds a Mongo-style query based on kwargs values for the record style.
 
@@ -568,7 +624,7 @@ class Record():
         return querydict
 
     def cdcsquery(self,
-                  **kwargs: any) -> dict:
+                  **kwargs) -> dict:
         """
         Builds a CDCS-style query based on kwargs values for the record style.
         
@@ -615,7 +671,7 @@ class Record():
         import lxml.etree as ET
 
         # Build xml content
-        xml_content = self.model.xml()
+        xml_content = str(self.model.xml())
 
         xml = ET.fromstring(xml_content.encode('UTF-8'))
 
@@ -653,7 +709,7 @@ class Record():
 
         # Build xml content
         if xml_content is None:
-            xml_content = self.model.xml()
+            xml_content = str(self.model.xml())
 
         xml = ET.fromstring(xml_content.encode('UTF-8'))
 
@@ -676,7 +732,7 @@ class Record():
             raise TypeError('database must be a yabadaba.Database or None')
 
     @property
-    def tar(self):
+    def tar(self) -> TarFile:
         """tarfile.TarFile: The tar archive associated with the record"""
         # Return tarfile if set
         if self.__tar is not None:
@@ -688,6 +744,10 @@ class Record():
 
         # Fetch tar from database, set to cache and return
         self.tar = self.database.get_tar(record=self)
+        
+        if self.__tar is None:
+            raise ValueError('No tar file found!')
+
         return self.__tar
 
     @tar.setter
