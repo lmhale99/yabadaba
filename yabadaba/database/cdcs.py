@@ -22,6 +22,8 @@ from ..tools import aslist, iaslist
 from . import Database
 from ..record import recordmanager, load_record, Record
 
+__all__ = ['CDCSDatabase']
+
 class CDCSDatabase(Database):
 
     def __init__(self,
@@ -114,7 +116,7 @@ class CDCSDatabase(Database):
                     keyword: Optional[str] = None,
                     page: Optional[int] = None,
                     progress_bar: bool = True,
-                    **kwargs) -> Union[list, Tuple[list, pd.DataFrame]]:
+                    **kwargs) -> Union[np.ndarray, Tuple[np.ndarray, pd.DataFrame]]:
         """
         Produces a list of all matching records in the database.
         

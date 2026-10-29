@@ -25,6 +25,8 @@ from ..tools import aslist
 from . import Database
 from ..record import recordmanager, load_record, Record
 
+__all__ = ['MongoDatabase']
+
 class MongoDatabase(Database):
 
     def __init__(self,
@@ -73,7 +75,7 @@ class MongoDatabase(Database):
                     style: Optional[str] = None,
                     return_df: bool = False,
                     query: Optional[dict] = None,
-                    **kwargs) -> Union[list, Tuple[list, pd.DataFrame]]:
+                    **kwargs) -> Union[np.ndarray, Tuple[np.ndarray, pd.DataFrame]]:
         """
         Produces a list of all matching records in the database.
         

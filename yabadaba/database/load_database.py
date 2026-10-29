@@ -85,7 +85,7 @@ def load_database(name: Optional[str] = None,
         except KeyError as err:
             raise KeyError(f'database {name} not found') from err
 
-        style = kwargs.pop('style')
-        host = kwargs.pop('host')
+        style = str(kwargs.pop('style'))
+        host = str(kwargs.pop('host'))
 
     return databasemanager.init(style, host=host, **kwargs)
