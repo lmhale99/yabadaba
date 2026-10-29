@@ -8,6 +8,8 @@ import pandas as pd
 from ..tools import iaslist
 from .Query import Query
 
+__all__ = ['ListContainsQuery']
+
 class ListContainsQuery(Query):
     """Class for querying list fields for contained values"""
 

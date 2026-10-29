@@ -2,25 +2,27 @@
 # Standard Python libraries
 from typing import Any, Optional
 
-# Relative imports
-from ..tools import iaslist
-from .Query import Query
-
-# https://pandas.pydata.org/
 import pandas as pd
 
-class StrContainsQuery(Query):
-    """Class for querying str fields for contained values"""
+# Relative imports
+from ..tools import iaslist
+
+from .Query import Query
+
+__all__ = ['BoolMatchQuery']
+
+class BoolMatchQuery(Query):
+    """Class for querying bool fields for matching values"""
 
     @property
     def style(self) -> str:
         """str: The query style"""
-        return 'str_contains'
+        return 'bool_match'
 
     @property
     def parameter_type(self) -> str:
         """str: The types of query parameter values accepted by this query style"""
-        return 'str or list, optional'
+        return 'bool, optional'
 
     def mongo(self,
               querylist: list,
@@ -44,17 +46,8 @@ class StrContainsQuery(Query):
         # Get path and add prefix
         path = f'{prefix}{self.path}'
 
-        if value is not None:
-            
-            # Init new query
-            newquery = {'$and': []}
-
-            # Build a regex query for each given value
-            for v in iaslist(value):
-                newquery['$and'].append({path:{'$regex': str(v)}})
-
-            # Append newquery to querylist
-            querylist.append(newquery)
+        if isinstance(value, bool):
+            querylist.append( {path: value} )
 
     def pandas(self,
                df: pd.DataFrame,
@@ -97,42 +90,37 @@ class StrContainsQuery(Query):
             Returns
             -------
             bool
-                True if value is None or if all values are contained in the/an
+                True if value is None or if given value matches the
                 element being checked.
             """
-            
             # Return True for all fields if value is None
             if value is None:
                 return True
-            
+
             if parent is None:
 
                 # Check if name is in series
                 if name not in series or pd.isna(series[name]):
                     return False
-
-                # Check if all values are in series[name]
-                for v in iaslist(value):
-                    if v not in series[name]:
-                        return False
-                return True
+                
+                # Check for a value match
+                return series[name] is value
             
             else:
 
+                if parent not in series:
+                    return False
+                
                 # Loop over all child elements
                 for child in iaslist(series[parent]):
-                    
+
                     # Check if child element has name
                     if name in child and pd.notna(child[name]):
-                        match = True
-                        
-                        # Check if all values are in child[name]
-                        for v in iaslist(value):
-                            if v not in child[name]:
-                                match = False
-                        if match:
+
+                        # Check if child element matches a value
+                        if child[name] is value:
                             return True
-                
+
                 # Return default False for no matching child elements
                 return False
 

@@ -2,24 +2,28 @@
 # Standard Python libraries
 from typing import Any, Optional
 
+import numpy as np
 import pandas as pd
 
 # Relative imports
 from ..tools import iaslist
+
 from .Query import Query
 
-class DateMatchQuery(Query):
-    """Class for querying date fields for matching values"""
+__all__ = ['IntQuery']
+
+class IntQuery(Query):
+    """Class for querying int fields for matching values or ranges of values"""
 
     @property
     def style(self) -> str:
         """str: The query style"""
-        return 'date_match'
+        return 'int'
 
     @property
     def parameter_type(self) -> str:
         """str: The types of query parameter values accepted by this query style"""
-        return 'str or list, optional'
+        return 'int, tuple or list, optional'
 
     def mongo(self,
               querylist: list,
@@ -44,10 +48,31 @@ class DateMatchQuery(Query):
         path = f'{prefix}{self.path}'
 
         if value is not None:
-        
-            # Build the query
-            value = [str(v) for v in iaslist(value)]
-            querylist.append( {path: {'$in': value} } )
+            
+            # Handle unique case of a single 2-value tuple
+            if isinstance(value, tuple) and len(value) == 2:
+                value = [value]
+
+            # Split values into single floats or tuples of (min, max)
+            val = []
+            valranges = []
+            for v in iaslist(value):
+                if isinstance(v, tuple) and len(v) == 2:
+                    valranges.append(v)
+                else:
+                    val.append(int(v))
+
+            # Init newquery as list of $or evaluations
+            newquery = {'$or':[]}
+            if len(val) > 0:
+                newquery['$or'].append( {path: {'$in': val} } )
+            
+            for valrange in valranges:
+                minval, maxval = self.range_check(valrange)
+                newquery['$or'].append({path: {'$gte': minval, '$lte':maxval}})
+
+            # Append newquery to querylist
+            querylist.append(newquery)
 
     def pandas(self,
                df: pd.DataFrame,
@@ -96,33 +121,77 @@ class DateMatchQuery(Query):
             # Return True for all fields if value is None
             if value is None:
                 return True
+            
+            # Handle unique case of a single 2-value tuple
+            if isinstance(value, tuple) and len(value) == 2:
+                value = [value]
 
-            # Convert value to list of strings
-            value = [str(v) for v in iaslist(value)]
+            # Split values into single floats or tuples of (min, max)
+            val = []
+            valranges = []
+            for v in iaslist(value):
+                if isinstance(v, tuple) and len(v) == 2:
+                    valranges.append(v)
+                else:
+                    val.append(int(v))
 
             if parent is None:
 
                 # Check if name is in series
                 if name not in series or pd.isna(series[name]):
                     return False
-
-                # Check for a value match
-                return str(series[name]) in value
+                
+                # Check for a direct value match
+                if int(series[name]) in val:
+                    return True
+                
+                # Check if value is in a given range
+                for valrange in valranges:
+                    minval, maxval = self.range_check(valrange)
+                    if int(series[name]) >= minval and int(series[name]) <= maxval:
+                        return True
+                    
+                # Return False for no matching values or ranges
+                return False
             
             else:
 
+                if parent not in series:
+                    return False
+                
                 # Loop over all child elements
                 for child in iaslist(series[parent]):
 
                     # Check if child element has name
                     if name in child and pd.notna(child[name]):
-                    
-                        # Check if child element matches a value
-                        if str(child[name]) in value:
+
+                        # Check if child element directly matches a value
+                        if int(child[name]) in val:
                             return True
-                
+                        
+                        # Check if value is in a given range
+                        for valrange in valranges:
+                            minval, maxval = self.range_check(valrange)
+                            if int(child[name]) >= minval and int(child[name]) <= maxval:
+                                return True
+
                 # Return default False for no matching child elements
                 return False
 
         # Use apply_function on df using value and object attributes
         return df.apply(apply_function, axis=1, args=(self.name, value, self.parent)).astype(bool)
+
+
+    def range_check(self, valrange):
+        """For range query values, numbers become int and None become +-inf"""
+        if valrange[0] is not None:
+            minval = int(valrange[0])
+        else:
+            minval = -np.inf
+
+        if valrange[1] is not None:
+            maxval = int(valrange[1])
+        else:
+            maxval = np.inf
+
+        return (minval, maxval)

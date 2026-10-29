@@ -12,6 +12,8 @@ from ..tools import iaslist
 
 from .Query import Query
 
+__all__ = ['FloatQuery']
+
 class FloatQuery(Query):
     """Class for querying float fields for closely matching values or ranges of values"""
 
@@ -63,7 +65,7 @@ class FloatQuery(Query):
         return 'float, tuple or list, optional'
 
     @property
-    def unit(self) -> str:
+    def unit(self) -> Optional[str]:
         """str : The unit to use for the query value"""
         return self.__unit
 

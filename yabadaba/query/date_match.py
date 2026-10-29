@@ -6,21 +6,22 @@ import pandas as pd
 
 # Relative imports
 from ..tools import iaslist
-
 from .Query import Query
 
-class MonthMatchQuery(Query):
-    """Class for querying month fields for matching values"""
+__all__ = ['DateMatchQuery']
+
+class DateMatchQuery(Query):
+    """Class for querying date fields for matching values"""
 
     @property
     def style(self) -> str:
         """str: The query style"""
-        return 'month_match'
+        return 'date_match'
 
     @property
     def parameter_type(self) -> str:
         """str: The types of query parameter values accepted by this query style"""
-        return 'int or list, optional'
+        return 'str or list, optional'
 
     def mongo(self,
               querylist: list,
@@ -46,9 +47,9 @@ class MonthMatchQuery(Query):
 
         if value is not None:
         
-            # Build the query 
-            val = [f'--{int(v):02}' for v in iaslist(value)]
-            querylist.append( {path: {'$in': val} } )
+            # Build the query
+            value = [str(v) for v in iaslist(value)]
+            querylist.append( {path: {'$in': value} } )
 
     def pandas(self,
                df: pd.DataFrame,
@@ -97,34 +98,31 @@ class MonthMatchQuery(Query):
             # Return True for all fields if value is None
             if value is None:
                 return True
-            
-            # Convert value to list of ints
-            value = [int(v) for v in iaslist(value)]
+
+            # Convert value to list of strings
+            value = [str(v) for v in iaslist(value)]
 
             if parent is None:
 
                 # Check if name is in series
                 if name not in series or pd.isna(series[name]):
                     return False
-                
+
                 # Check for a value match
-                return int(series[name]) in value
+                return str(series[name]) in value
             
             else:
 
-                if parent not in series:
-                    return False
-                
                 # Loop over all child elements
                 for child in iaslist(series[parent]):
 
                     # Check if child element has name
                     if name in child and pd.notna(child[name]):
-
+                    
                         # Check if child element matches a value
-                        if int(child[name]) in value:
+                        if str(child[name]) in value:
                             return True
-
+                
                 # Return default False for no matching child elements
                 return False
 

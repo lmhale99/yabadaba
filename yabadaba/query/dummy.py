@@ -9,6 +9,8 @@ from ..tools import aslist
 
 from .Query import Query
 
+__all__ = ['DummyQuery']
+
 class DummyQuery(Query):
     """Class for a query field that doesn't perform a database query"""
 
